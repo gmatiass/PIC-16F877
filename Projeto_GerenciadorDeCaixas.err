@@ -1,0 +1,80 @@
+Warning[205] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\PROJETO_GERENCIADORDECAIXAS.ASM 24 : Found directive in column 1. (__CONFIG)
+Message[305] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\PROJETO_GERENCIADORDECAIXAS.ASM 201 : Using default destination of 1 (file).
+Message[305] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\PROJETO_GERENCIADORDECAIXAS.ASM 205 : Using default destination of 1 (file).
+Warning[202] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\PROJETO_GERENCIADORDECAIXAS.ASM 226 : Argument out of range.  Least significant bits used.
+Message[305] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\PROJETO_GERENCIADORDECAIXAS.ASM 232 : Using default destination of 1 (file).
+Message[305] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\PROJETO_GERENCIADORDECAIXAS.ASM 234 : Using default destination of 1 (file).
+Message[302] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\PROJETO_GERENCIADORDECAIXAS.ASM 256 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\PROJETO_GERENCIADORDECAIXAS.ASM 258 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\PROJETO_GERENCIADORDECAIXAS.ASM 260 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\PROJETO_GERENCIADORDECAIXAS.ASM 262 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\PROJETO_GERENCIADORDECAIXAS.ASM 264 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\PROJETO_GERENCIADORDECAIXAS.ASM 267 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\PROJETO_GERENCIADORDECAIXAS.ASM 279 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\PROJETO_GERENCIADORDECAIXAS.ASM 283 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[305] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\PROJETO_GERENCIADORDECAIXAS.ASM 420 : Using default destination of 1 (file).
+Message[305] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\PROJETO_GERENCIADORDECAIXAS.ASM 422 : Using default destination of 1 (file).
+Message[305] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\PROJETO_GERENCIADORDECAIXAS.ASM 424 : Using default destination of 1 (file).
+Message[305] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\PROJETO_GERENCIADORDECAIXAS.ASM 433 : Using default destination of 1 (file).
+Message[305] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\PROJETO_GERENCIADORDECAIXAS.ASM 435 : Using default destination of 1 (file).
+Message[305] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\PROJETO_GERENCIADORDECAIXAS.ASM 437 : Using default destination of 1 (file).
+Message[305] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\PROJETO_GERENCIADORDECAIXAS.ASM 446 : Using default destination of 1 (file).
+Message[305] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\PROJETO_GERENCIADORDECAIXAS.ASM 448 : Using default destination of 1 (file).
+Message[305] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\PROJETO_GERENCIADORDECAIXAS.ASM 456 : Using default destination of 1 (file).
+Message[305] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\DISPLAY.INC 922 : Using default destination of 1 (file).
+Message[305] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\DISPLAY.INC 991 : Using default destination of 1 (file).
+Message[305] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\DISPLAY.INC 1054 : Using default destination of 1 (file).
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 45 : Found opcode in column 1. (return)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 57 : Found opcode in column 1. (return)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 63 : Found opcode in column 1. (return)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 74 : Found opcode in column 1. (return)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 97 : Found opcode in column 1. (return)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 105 : Found opcode in column 1. (return)
+Message[305] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 115 : Using default destination of 1 (file).
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 119 : Found opcode in column 1. (return)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 165 : Found opcode in column 1. (return)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 175 : Found opcode in column 1. (goto)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 189 : Found opcode in column 1. (return)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 196 : Found opcode in column 1. (return)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 200 : Found opcode in column 1. (clrf)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 201 : Found opcode in column 1. (movf)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 202 : Found opcode in column 1. (movwf)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 206 : Found opcode in column 1. (movf)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 207 : Found opcode in column 1. (subwf)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 208 : Found opcode in column 1. (btfss)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 209 : Found opcode in column 1. (return)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 210 : Found opcode in column 1. (movwf)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 211 : Found opcode in column 1. (incf)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 213 : Found opcode in column 1. (goto)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 217 : Found opcode in column 1. (movf)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 218 : Found opcode in column 1. (movwf)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 219 : Found opcode in column 1. (movf)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 220 : Found opcode in column 1. (movwf)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 222 : Found opcode in column 1. (movf)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 223 : Found opcode in column 1. (subwf)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 224 : Found opcode in column 1. (movlw)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 225 : Found opcode in column 1. (btfss)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 226 : Found opcode in column 1. (subwf)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 227 : Found opcode in column 1. (btfss)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 228 : Found opcode in column 1. (call)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 229 : Found opcode in column 1. (movf)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 230 : Found opcode in column 1. (subwf)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 232 : Found opcode in column 1. (return)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 236 : Found opcode in column 1. (movf)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 237 : Found opcode in column 1. (subwf)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 238 : Found opcode in column 1. (bcf)
+Warning[203] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\OPARITH.INC 240 : Found opcode in column 1. (return)
+Message[305] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\TECLADO.INC 112 : Using default destination of 1 (file).
+Message[302] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\E2PROM.INC 6 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\E2PROM.INC 12 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\E2PROM.INC 15 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\E2PROM.INC 16 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\E2PROM.INC 18 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\E2PROM.INC 20 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\E2PROM.INC 21 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\E2PROM.INC 22 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\E2PROM.INC 24 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\E2PROM.INC 34 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\E2PROM.INC 37 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\E2PROM.INC 38 : Register in operand not in bank 0.  Ensure that bank bits are correct.
+Message[302] C:\USERS\GABRIEL MATIAS\DESKTOP\PROJETO_UC\E2PROM.INC 41 : Register in operand not in bank 0.  Ensure that bank bits are correct.

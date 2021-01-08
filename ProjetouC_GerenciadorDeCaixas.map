@@ -1,0 +1,188 @@
+MPLINK 4.49, Linker
+Linker Map File - Created Tue Jun 26 21:24:45 2018
+
+                                 Section Info
+                  Section       Type    Address   Location Size(Bytes)
+                ---------  ---------  ---------  ---------  ---------
+                   .org_0       code   0x000000    program   0x000002
+                   .cinit    romdata   0x000001    program   0x000004
+                   .org_1       code   0x000004    program   0x000b56
+.config_2007_PROJETO_GERENCIADORDECAIXAS.O       code   0x002007    program   0x000002
+
+
+
+                              Program Memory Usage 
+                               Start         End      
+                           ---------   ---------      
+                            0x000000    0x000002      
+                            0x000004    0x0005ae      
+                            0x002007    0x002007      
+            1455 out of 8454 program addresses used, program memory utilization is 17%
+
+
+
+                              Symbols - Sorted by Name
+                     Name    Address   Location    Storage File                     
+                ---------  ---------  ---------  --------- ---------                
+                CAIXA_FIM   0x000176    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+              CAIXA_LIVRE   0x000123    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+            CALCULO_MEDIA   0x00007a    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+            DESLIGA_MOTOR   0x000074    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+                  DIGITOS   0x0003bb    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+                      DIV   0x00042d    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+                     DIV2   0x00044a    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+             DIVIDE_16x16   0x000414    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+               DIVIDE_8x8   0x000447    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+                 EMPRESTA   0x000443    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+                EMPRESTA2   0x00045f    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+          ESCREVE_DISPLAY   0x0003d0    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+              ESCR_E2PROM   0x000587    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\E2PROM.INC
+                   FILTRO   0x000013    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+                  FILTRO2   0x000015    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+              FIM_ESCRITA   0x00029a    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+                  FIM_INT   0x000078    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+               GERA_PULSO   0x0003d4    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+           INICIALIZA_LCD   0x0000ae    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+                   INICIO   0x00001c    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+                INTERRUPT   0x000063    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+              LEIT_E2PROM   0x0005a0    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\E2PROM.INC
+               LIGA_MOTOR   0x00006c    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+                LIMPA_RAM   0x00003b    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+                     MAIN   0x000052    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+         MOSTRAR_CONTADOR   0x0001bd    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+         MOSTRAR_ENDERECO   0x000220    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+      MOSTRAR_MEDIA_1CASA   0x00038d    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+     MOSTRAR_MEDIA_2CASAS   0x000359    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+     MOSTRAR_MEDIA_3CASAS   0x00031f    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+             MOSTRAR_V100   0x0002e8    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+              MOSTRAR_V33   0x0002b5    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+               MULTIPLICA   0x0003f4    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+              MULTIPLICAX   0x00040b    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+          MULTIPLICA_10x8   0x0003fb    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+           MULTIPLICA_4x4   0x0003d9    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+           MULTIPLICA_8x8   0x0003ea    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+               PASSOU_10S   0x00005d    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+                PASSOU_1S   0x000059    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+                  PORT_C0   0x00046d    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  PORT_C2   0x000476    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  PORT_C3   0x00047f    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+        POSICIONA_DISPLAY   0x0003cc    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+                  SAI_INT   0x00000e    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+            SUBTRAI_16x16   0x000439    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+           SUBTRAI_16x162   0x000451    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+                  TECLADO   0x000463    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  TECLA_0   0x000488    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  TECLA_1   0x0004a9    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  TECLA_2   0x0004bd    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  TECLA_3   0x0004d0    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  TECLA_8   0x0004e0    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  TECLA_9   0x0004ef    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  TECLA_A   0x0004fe    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  TECLA_B   0x00050d    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  TECLA_C   0x000524    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  TECLA_D   0x00053c    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  TECLA_E   0x000554    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  TECLA_F   0x000576    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             TESTA_MULT_1   0x0003ff    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+             TESTA_MULT_2   0x000407    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+               TESTE_ZERO   0x0003ec    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+              T_DIVIDENDO   0x00041a    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+             _.org_1_0018   0x000018    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+             _.org_1_0491   0x000491    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             _.org_1_04B2   0x0004b2    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             _.org_1_04C6   0x0004c6    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             _.org_1_04D9   0x0004d9    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             _.org_1_04E9   0x0004e9    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             _.org_1_04F8   0x0004f8    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             _.org_1_0507   0x000507    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             _.org_1_0516   0x000516    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             _.org_1_052D   0x00052d    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             _.org_1_0545   0x000545    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             _.org_1_055D   0x00055d    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             _.org_1_057F   0x00057f    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             _.org_1_059B   0x00059b    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\E2PROM.INC
+
+
+
+                              Symbols - Sorted by Address
+                     Name    Address   Location    Storage File                     
+                ---------  ---------  ---------  --------- ---------                
+                  SAI_INT   0x00000e    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+                   FILTRO   0x000013    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+                  FILTRO2   0x000015    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+             _.org_1_0018   0x000018    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+                   INICIO   0x00001c    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+                LIMPA_RAM   0x00003b    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+                     MAIN   0x000052    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+                PASSOU_1S   0x000059    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+               PASSOU_10S   0x00005d    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+                INTERRUPT   0x000063    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+               LIGA_MOTOR   0x00006c    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+            DESLIGA_MOTOR   0x000074    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+                  FIM_INT   0x000078    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+            CALCULO_MEDIA   0x00007a    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\Projeto_GerenciadorDeCaixas.asm
+           INICIALIZA_LCD   0x0000ae    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+              CAIXA_LIVRE   0x000123    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+                CAIXA_FIM   0x000176    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+         MOSTRAR_CONTADOR   0x0001bd    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+         MOSTRAR_ENDERECO   0x000220    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+              FIM_ESCRITA   0x00029a    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+              MOSTRAR_V33   0x0002b5    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+             MOSTRAR_V100   0x0002e8    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+     MOSTRAR_MEDIA_3CASAS   0x00031f    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+     MOSTRAR_MEDIA_2CASAS   0x000359    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+      MOSTRAR_MEDIA_1CASA   0x00038d    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+                  DIGITOS   0x0003bb    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+        POSICIONA_DISPLAY   0x0003cc    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+          ESCREVE_DISPLAY   0x0003d0    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+               GERA_PULSO   0x0003d4    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\DISPLAY.INC
+           MULTIPLICA_4x4   0x0003d9    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+           MULTIPLICA_8x8   0x0003ea    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+               TESTE_ZERO   0x0003ec    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+               MULTIPLICA   0x0003f4    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+          MULTIPLICA_10x8   0x0003fb    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+             TESTA_MULT_1   0x0003ff    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+             TESTA_MULT_2   0x000407    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+              MULTIPLICAX   0x00040b    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+             DIVIDE_16x16   0x000414    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+              T_DIVIDENDO   0x00041a    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+                      DIV   0x00042d    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+            SUBTRAI_16x16   0x000439    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+                 EMPRESTA   0x000443    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+               DIVIDE_8x8   0x000447    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+                     DIV2   0x00044a    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+           SUBTRAI_16x162   0x000451    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+                EMPRESTA2   0x00045f    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\OPARITH.INC
+                  TECLADO   0x000463    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  PORT_C0   0x00046d    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  PORT_C2   0x000476    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  PORT_C3   0x00047f    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  TECLA_0   0x000488    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             _.org_1_0491   0x000491    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  TECLA_1   0x0004a9    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             _.org_1_04B2   0x0004b2    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  TECLA_2   0x0004bd    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             _.org_1_04C6   0x0004c6    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  TECLA_3   0x0004d0    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             _.org_1_04D9   0x0004d9    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  TECLA_8   0x0004e0    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             _.org_1_04E9   0x0004e9    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  TECLA_9   0x0004ef    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             _.org_1_04F8   0x0004f8    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  TECLA_A   0x0004fe    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             _.org_1_0507   0x000507    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  TECLA_B   0x00050d    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             _.org_1_0516   0x000516    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  TECLA_C   0x000524    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             _.org_1_052D   0x00052d    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  TECLA_D   0x00053c    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             _.org_1_0545   0x000545    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  TECLA_E   0x000554    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             _.org_1_055D   0x00055d    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+                  TECLA_F   0x000576    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+             _.org_1_057F   0x00057f    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\TECLADO.INC
+              ESCR_E2PROM   0x000587    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\E2PROM.INC
+             _.org_1_059B   0x00059b    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\E2PROM.INC
+              LEIT_E2PROM   0x0005a0    program     static C:\Users\Gabriel Matias\Desktop\Projeto_uC\E2PROM.INC
+
+

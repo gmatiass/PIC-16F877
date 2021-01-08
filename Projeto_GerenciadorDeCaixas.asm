@@ -1,0 +1,484 @@
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;*                Gerenciador de Caixas Rápidos	                   *
+;*                         Ruahn Fuser                             *
+;*         		 DESENVOLVIDO POR GABRIEL MATIAS			       *
+;*   VERSÃO: 2.1                           DATA: 10/06/2018        *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;*                     DESCRIÇÃO DO ARQUIVO                        *
+;*-----------------------------------------------------------------*
+;*  MODELO PARA PIC 16F877	                                       *
+;* Programa para gerenciamento de caixas rápidos de supermercados, *
+;* agilizando filas e obtendo certas caracteristicas dos clientes. *
+;* 												   *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;*             CONFIGURAÇÃO DOS JUMPERS DE PLACA                   *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;* Teclado: Linha - CH3: 1 a 4; e Coluna - CH5: 1 a 4              *
+;* Motor DC PWM: CH5: 5 e 6; e CH2: 1                              *
+;* LCD: CH4; e Controle: CH6: 1 e 2                                *
+;* Buzzer: CH1: 6						                           *                                                               
+;*                                                                 *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;*                CONFIGURAÇÃO PARA GRAVAÇÃO (FUSES)			   *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+__CONFIG _WDT_OFF & _HS_OSC & _LVP_OFF & _DEBUG_ON & _BODEN_OFF
+
+;_CP_OFF 	==> MEMÓRIA DE PROGRAMA DESPROTEGIDA CONTRA LEITURA.
+;_WRT_OFF 	==> SEM PERMISSÃO PARA ESCREVER NA MEMÓRIA DE PROGRAMA
+;				DURANTE EXECUÇÃO DO PROGRAMA.
+;_DEBUG_ON	==> DEBUG ATIVADO.
+;_CPD_OFF 	==> MEMÓRIA EEPROM PROTEGIDA CONTRA LEITURA.
+;_LVP_OFF 	==> PROGRAMAÇÃO EM BAIXA TENSÃO DESABILITADA.
+;_WDT_OFF 	==> WDT DESATIVADO.
+;_BODEN_OFF	==> BROWN-OUT DESATIVADO. 
+;_PWRTE_ON 	==> POWER-ON RESET ATIVADO.
+;_XT_OSC 	==> OSCILADOR CRISTAL (4MHz).
+
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;*                     ARQUIVOS DE DEFINIÇÕES                      *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+#INCLUDE <P16F877.INC>	;ARQUIVO PADRÃO MICROCHIP PARA 16F877.
+
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;*                    PAGINAÇÃO DE MEMÓRIA                         *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;DEFINIÇÃO DE COMANDOS DE USUÁRIO PARA ALTERAÇÃO DA PÁGINA DE MEMÓRIA
+
+BANK0	MACRO					;SELECIONA BANK0 DE MEMÓRIA.
+				bcf STATUS,RP1
+				bcf	STATUS,RP0
+		ENDM					;FIM DA MACRO BANK0.
+
+BANK1	MACRO					;SELECIONA BANK1 DE MEMÓRIA.
+				bcf STATUS,RP1
+				bsf	STATUS,RP0
+		ENDM					;FIM DA MACRO BANK1.
+
+BANK2	MACRO					;SELECIONA BANK2 DE MEMÓRIA.
+				bsf STATUS,RP1
+				bcf	STATUS,RP0
+		ENDM					;FIM DA MACRO BANK2.
+
+BANK3	MACRO					;SELECIONA BANK3 DE MEMÓRIA.
+				bsf STATUS,RP1
+				bsf	STATUS,RP0
+		ENDM					;FIM DA MACRO BANK3.
+
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;*                         VARIÁVEIS                               *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+; DEFINIÇÃO DOS NOMES E ENDEREÇOS DE TODAS AS VARIÁVEIS UTILIZADAS 
+; PELO SISTEMA.
+	CBLOCK	0x20		;ENDEREÇO INICIAL DA MEMÓRIA DE
+						;USUÁRIO.
+		W_TEMP			;REGISTRADORES TEMPORÁRIOS PARA USO
+		STATUS_TEMP		;JUNTO ÀS INTERRUPÇÕES.
+		FLAGS			;VARIAVEL P/ FLAGS
+		FILTER			;VARIAVEL DE DEBOUNCING
+		FILTER2			;VARIAVEL DE DEBOUNCING
+		MULT_TMP		;VARIAVEL DO ARQUIVO OPARITH.INC
+		MULT_1			;VARIAVEL DO ARQUIVO OPARITH.INC
+		MULT_1_H		;VARIAVEL DO ARQUIVO OPARITH.INC
+		MULT_1_L		;VARIAVEL DO ARQUIVO OPARITH.INC
+		MULT_2			;VARIAVEL DO ARQUIVO OPARITH.INC
+		PRODUTO			;VARIAVEL DO ARQUIVO OPARITH.INC
+		PRODUTO_H		;VARIAVEL DO ARQUIVO OPARITH.INC
+		PRODUTO_L		;VARIAVEL DO ARQUIVO OPARITH.INC
+		QUOCIENTE_H		;VARIAVEL DO ARQUIVO OPARITH.INC
+		QUOCIENTE_L		;VARIAVEL DO ARQUIVO OPARITH.INC
+		DIVIDENDO_H		;VARIAVEL DO ARQUIVO OPARITH.INC
+		DIVIDENDO_L		;VARIAVEL DO ARQUIVO OPARITH.INC
+		DIVIDENDOTMP_H	;VARIAVEL DO ARQUIVO OPARITH.INC
+		DIVIDENDOTMP_L	;VARIAVEL DO ARQUIVO OPARITH.INC
+		RESTOTMP_H		;VARIAVEL DO ARQUIVO OPARITH.INC
+		RESTOTMP_L		;VARIAVEL DO ARQUIVO OPARITH.INC
+		DIVISOR_H		;VARIAVEL DO ARQUIVO OPARITH.INC
+		DIVISOR_L		;VARIAVEL DO ARQUIVO OPARITH.INC
+		DIVISORTMP_H	;VARIAVEL DO ARQUIVO OPARITH.INC
+		DIVISORTMP_L	;VARIAVEL DO ARQUIVO OPARITH.INC
+		RESTO_H			;VARIAVEL DO ARQUIVO OPARITH.INC
+		RESTO_L			;VARIAVEL DO ARQUIVO OPARITH.INC
+		QUOCIENTE		;VARIAVEL DO ARQUIVO OPARITH.INC
+		DIVIDENDO		;VARIAVEL DO ARQUIVO OPARITH.INC
+		RESTO			;VARIAVEL DO ARQUIVO OPARITH.INC
+		DIVISOR			;VARIAVEL DO ARQUIVO OPARITH.INC
+		MINUENDO_H		;VARIAVEL DO ARQUIVO OPARITH.INC
+		MINUENDO_L		;VARIAVEL DO ARQUIVO OPARITH.INC
+		DIFERENCA_H		;VARIAVEL DO ARQUIVO OPARITH.INC
+		DIFERENCA_L		;VARIAVEL DO ARQUIVO OPARITH.INC
+		SUBTRAENDO_H	;VARIAVEL DO ARQUIVO OPARITH.INC
+		SUBTRAENDO_L	;VARIAVEL DO ARQUIVO OPARITH.INC
+		CAIXA			;VARIAVEL DE CAIXA LIVRE
+		CONTADOR		;VARIAVEL P/ CONTAGEM DE ATENDIMENTOS
+		BATATA			;VARIAVEL P/ MANIPULACAO DE DIGITOS
+		DIGITO1			;VARIAVEL P/ MOSTRAR DIGITOS NO DISPLAY
+		DIGITO2			;VARIAVEL P/ MOSTRAR DIGITOS NO DISPLAY
+		DIGITO3			;VARIAVEL P/ MOSTRAR DIGITOS NO DISPLAY
+		DADO			;VARIAVEL P/ USO DA E2PROM
+		ENDERECO		;VARIAVEL P/ USO DA E2PROM
+		DIGEND1			;VARIAVEL P/ USO DO DISPLAY COM E2PROM
+		DIGEND2			;VARIAVEL P/ USO DO DISPLAY COM E2PROM
+		TIME_1S			;VARIAVEL DE INTERRUPCAO DE 1s
+		TIME_10S		;VARIAVEL DE INTERRUPCAO DE 10s
+		MEDIA			;VARIAVEL P/ CALCULO DA MEDIA
+		MEDIA_RESTO		;VARIAVEL P/ CALCULO DO RESTO
+
+		;NOVAS VARIÁVEIS
+
+	ENDC			;FIM DO BLOCO DE MEMÓRIA
+
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;*                        FLAGS INTERNOS                           *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+; DEFINIÇÃO DE TODOS OS FLAGS UTILIZADOS PELO SISTEMA.
+
+;REGISTRADOR FLAGS:
+;x = DEFINIDO EM OUTRO LUGAR DA TABELA.
+;* =  DEFINIDO COMO MOSTRADO (0/1).
+
+;BIT  # |7|6|5|4|3|2|1|0|
+;		-----------------
+;       |x|x|x|x|x|x|x|*|	ESTADO_BOTAO	
+;       |x|x|x|x|x|x|*|x|	ESTADO_DISPLAY
+;       |x|x|x|x|x|*|x|x|	ESTADO_E2PROM
+;       |x|x|x|x|*|x|x|x|	FLAG_1S
+;       |x|x|x|*|x|x|x|x|	FLAG_10S	
+;       |x|x|*|x|x|x|x|x|	ESTADO_MOTOR
+;       |x|*|x|x|x|x|x|x|	FIM_MEDIA
+;       |*|x|x|x|x|x|x|x|	RESTO_0
+
+#DEFINE ESTADO_BOTAO FLAGS,0
+#DEFINE ESTADO_DISPLAY FLAGS,1
+#DEFINE ESTADO_E2PROM FLAGS,2
+#DEFINE FLAG_1S FLAGS,3
+#DEFINE	FLAG_10S FLAGS,4
+#DEFINE ESTADO_MOTOR FLAGS,5
+#DEFINE	FIM_MEDIA FLAGS,6
+#DEFINE	RESTO_0	FLAGS,7
+
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;*                         CONSTANTES                              *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+; DEFINIÇÃO DE TODAS AS CONSTANTES UTILIZADAS PELO SISTEMA.
+T1	EQU	.350				;CONSTANTE DO DELAY
+T2	EQU	.175				;CONSTANTE DO DELAY
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;*                           ENTRADAS                              *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+; DEFINIÇÃO DE TODOS OS PINOS QUE SERÃO UTILIZADOS COMO ENTRADA
+; COMENTAR O SIGNIFICADO DE SEUS ESTADOS (0 E 1).
+
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;*                           SAÍDAS                                *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+; DEFINIÇÃO DE TODOS OS PINOS QUE SERÃO UTILIZADOS COMO SAÍDA
+; COMENTAR O SIGNIFICADO DE SEUS ESTADOS (0 E 1)
+
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;*                       VETOR DE RESET                            *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+	ORG	0x00				;ENDEREÇO INICIAL DE PROCESSAMENTO.
+	goto	INICIO
+	
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;*                    INÍCIO DA INTERRUPÇÃO                        *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+; ENDEREÇO DE DESVIO DAS INTERRUPÇÕES. A PRIMEIRA TAREFA É SALVAR OS
+; VALORES DE "W" E "STATUS" PARA RECUPERAÇÃO FUTURA.
+
+	ORG	0x04				;ENDEREÇO INICIAL DA INTERRUPÇÃO.
+	movwf	W_TEMP			;COPIA W PARA W_TEMP.
+	swapf	STATUS,W
+	movwf	STATUS_TEMP		;COPIA STATUS PARA STATUS_TEMP.
+
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;*                    ROTINA DE INTERRUPÇÃO                        *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+; ROTINAS DE RECONHECIMENTO E TRATAMENTO DAS INTERRUPÇÕES
+	BCF		INTCON,2		;LIMPA FLAG TOIF, ESTOURO TMR0
+	
+	DECFSZ	TIME_1S			;DECREMENTA A VARIAVEL TIME_P E PULA SE FOR 0
+	GOTO	SAI_INT			;SAI DA INTERRUPÇÃO
+	BSF		FLAG_1S			;SETA A FLAG DE 1s
+
+	DECFSZ	TIME_10S		;DECREMENTA A VARIAVEL TIME_B E PULA SE FOR 0
+	GOTO	SAI_INT			;SAI DA INTERRUPCAO
+	BSF		FLAG_10S		;SETA A FLAG DE 10s
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;*                 ROTINA DE SAÍDA DA INTERRUPÇÃO                  *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+; OS VALORES DE "W" E "STATUS" DEVEM SER RECUPERADOS ANTES DE 
+; RETORNAR DA INTERRUPÇÃO
+SAI_INT
+	swapf	STATUS_TEMP,W
+	movwf	STATUS			;MOVE STATUS_TEMP PARA STATUS.
+	swapf	W_TEMP,F
+	swapf	W_TEMP,W		;MOVE W_TEMP PARA W.
+	retfie
+
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;*	            	 ROTINAS E SUBROTINAS                      	   *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+; CADA ROTINA OU SUBROTINA DEVE POSSUIR A DESCRIÇÃO DE FUNCIONAMENTO
+; E UM NOME COERENTE ÀS SUAS FUNÇÕES.
+FILTRO
+	MOVLW	T1				;DELAY
+	MOVWF	FILTER			;DELAY
+
+FILTRO2
+	MOVLW	T2				;DELAY
+	MOVWF	FILTER2			;DELAY
+	DECFSZ	FILTER2			;DELAY
+	GOTO	$-1				;DELAY
+	DECFSZ	FILTER			;DELAY
+	GOTO	FILTRO2			;DELAY
+	
+	RETURN					;RETORNA
+
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;*                     INÍCIO DO PROGRAMA                          *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+	
+INICIO:
+	clrf	PORTA			;LIMPANDO AS PORTAS P/ INICIO DO PROGRAMA
+	clrf	PORTB			;LIMPANDO AS PORTAS P/ INICIO DO PROGRAMA
+	clrf	PORTC			;LIMPANDO AS PORTAS P/ INICIO DO PROGRAMA
+	clrf	PORTD			;LIMPANDO AS PORTAS P/ INICIO DO PROGRAMA
+	clrf	PORTE			;LIMPANDO AS PORTAS P/ INICIO DO PROGRAMA
+
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;*             	CONFIGURAÇÃO DO MICROCONTROLADOR                   *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+	BANK1				;ALTERA PARA O BANCO 1.
+	movlw	B'00000000'
+	movwf	TRISA		;DEFINE ENTRADAS E SAÍDAS DO PORTA.
+	movlw	B'00001111'
+	movwf	TRISB		;DEFINE ENTRADAS E SAÍDAS DO PORTB.
+	movlw	B'00000000'
+	movwf	TRISC		;DEFINE ENTRADAS E SAÍDAS DO PORTA.
+	movlw	B'00000000'
+	movwf	TRISD		;DEFINE ENTRADAS E SAÍDAS DO PORTB.
+	movlw	B'00000000'
+	movwf	TRISE		;DEFINE ENTRADAS E SAÍDAS DO PORTB.
+
+	movlw	B'11000111'
+	movwf	OPTION_REG	;DEFINE OPÇÕES DE OPERAÇÃO.
+						;PULL-UPS DESABILITADOS </RBPU>.
+						;INT. NA BORDA DE SUBIDA EM RB0 <INTEDG>.
+						;TIMER0 INCR. PELO CICLO DE MÁQUINA <TOCS>.
+						;PRESCALER APLICADO AO WDT <PSA>.
+						;WDT 1:128, TMR0 1:1 <PS2:PS0>.
+	
+	movlw	B'10000100'
+	movwf	INTCON		;DEFINE OPÇÕES DE INTERRUPÇÕES;
+						;TODAS AS INTERRUPÇÕES DESABILITADAS.
+	
+	movlw	B'00000111'
+	movwf	ADCON1		;CONFIGURA CONVERSOR A/D.
+						;CONFIGURA PORTA E PORTE COMO I/O DIGITAL.
+
+	MOVLW	B'11111001'	;DECIMAL 249
+	MOVWF	PR2			;DEFINE AS OPCOES DE PWM
+
+	BANK0				;RETORNA PARA O BANCO 0.
+
+	MOVLW	B'00000110'
+	MOVWF	T2CON		;DEFINE AS OPCOES DO TIMER2
+
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;*                      INICIALIZAÇÃO DA RAM                       *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;  LIMPEZA DE TODA A RAM DO BANC0 0, INDO DE 0X20 A 0X7F.
+
+	movlw	0x20
+	movwf	FSR				;APONTA O ENDEREÇAMENTO INDIRETO PARA
+							;A PRIMEIRA POSIÇÃO DA RAM.
+LIMPA_RAM
+	clrf	INDF			;LIMPA A POSIÇÃO ATUAL.
+	incf	FSR,F			;INCREMENTA PONTEIRO P/ A PRÓX. POS.
+	movf	FSR,W
+	xorlw	0x80			;COMPARA PONTEIRO COM A ÚLT. POS. +1.
+	btfss	STATUS,Z		;JÁ LIMPOU TODAS AS POSIÇÕES?
+	goto	LIMPA_RAM		;NÃO, LIMPA A PRÓXIMA POSIÇÃO.
+							;SIM, CONTINUA O PROGRAMA.
+
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;*               INICIALIZAÇÃO DAS VARIÁVEIS E SFRs                *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;  ATRIBUIÇÃO DE VALORES INICIAIS ÀS VARIÁVEIS CRIADAS NA RAM.
+
+	MOVLW	B'11111111'		;DEFINE VALORES P/ O PORTC
+	MOVWF	PORTC			;DEFINE VALORES P/ O PORTC
+	MOVLW	B'11111111'		;DEFINE VALORES P/ O PORTD
+	MOVWF	PORTD			;DEFINE VALORES P/ O PORTC
+	BCF		ESTADO_BOTAO	;LIMPA FLAG DE ESTADO DO BOTAO
+	BCF		ESTADO_DISPLAY	;LIMPA FLAG DE ESTADO DO DISPLAY
+	BCF		ESTADO_E2PROM	;LIMPA FLAG DE ESTADO DA E2PROM
+	BCF		ESTADO_MOTOR	;LIMPA FLAG DE ESTADO DO MOTOR
+	BCF		FLAG_1S			;LIMPA FLAG DE ESTADO DA INTERRUPCAO
+	BCF		FLAG_10S		;LIMPA FLAG DE ESTADO DA INTERRUPCAO
+	BCF		FIM_MEDIA		;LIMPA FLAG DE ESTADO DO FIM DA MEDIA
+	BCF		RESTO_0			;LIMPA FLAG DE ESTADO DO RESTO
+	MOVLW	0x00			;MOVE O VALOR 0 P/ W
+	MOVWF	CONTADOR		;MOVE O VALOR P/ CONTADOR
+	CLRF	MEDIA			;LIMPA O REGISTRADOR MEDIA
+	CLRF	MEDIA_RESTO		;LIMPA O REGISTRADOR MEDIA_RESTO
+	CLRF	ENDERECO		;LIMPA O REGISTRADOR DE ENDERECO
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;*                     ROTINA PRINCIPAL                            *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+MAIN
+	
+	BTFSS	ESTADO_DISPLAY	;TESTA A FLAG DO DISPLAY P/ INICIA-LO
+	CALL	INICIALIZA_LCD	;VAI P/ A ROTINA DE INICIO DO DISPLAY
+
+	BTFSC	FLAG_1S			;TESTA A FLAG DE 1s
+	GOTO	PASSOU_1S		;VAI P/ A ROTINA QUE RESETA O CONTADOR DE 1s
+
+	BTFSC	FLAG_10S		;TESTA A FLAG DE 10s
+	GOTO	PASSOU_10S		;VAI P/ A ROTINA QUE RESETA O CONTADOR DE 10s
+
+	GOTO	TECLADO			;VAI P/ A ROTINA DE TECLADO
+
+PASSOU_1S
+	
+	BCF		FLAG_1S			;LIMPA A FLAG DE 1s
+	MOVLW	.62				;MOVE O VALOR LITERAL 62 PARA O REGISTRADOR W
+	MOVWF	TIME_1S			;MOVE O VALOR DE W PARA A VARIAVEL TIME_1S
+	
+	GOTO	MAIN			;RETORNA PRO MAIN
+
+PASSOU_10S
+	
+	BCF		FLAG_10S		;LIMPA A FLAG DE 10s
+	MOVLW	.10				;PASSA O VALOR LITERAL 10 PARA O REGISTRADOR W
+	MOVWF	TIME_10S		;MOVE O VALOR DE W PARA A VARIAVEL TIME_10S
+
+	BTFSC	ESTADO_MOTOR	;TESTA FLAG DO ESTADO DO MOTOR
+	GOTO	DESLIGA_MOTOR	;VAI P/ A ROTINA DE DESLIGAR O MOTOR
+
+	GOTO	LIGA_MOTOR		;VAI P/ A ROTINA DE LIGAR O MOTOR
+	
+INTERRUPT
+	
+	BCF		FLAG_1S			;LIMPA A FLAG DE 1s
+	BCF		FLAG_10S		;LIMPA A FLAG DE 10s
+	MOVLW	.62				;MOVE O VALOR LITERAL 62 PARA O REGISTRADOR W
+	MOVWF	TIME_1S			;MOVE O VALOR DE W PARA A VARIAVEL TIME_1S
+	MOVLW	.10				;MOVE O VALOR LITERAL 10 PARA O REGISTRADOR W
+	MOVWF	TIME_10S		;MOVE O VALOR DE W PARA A VARIAVEL TIME_10
+	CLRF	TMR0			;LIMPA O CONTADOR DO TMR0
+	BSF		INTCON,5		;FECHA A CHAVE DE INTERRUPÇÃO, INICIANDO-A
+	
+	RETURN					;RETORNA
+
+LIGA_MOTOR
+	
+	MOVLW	B'00000111'		;VELOCIDADE DESEJADA DE 3%
+	MOVWF	CCPR2L			;MOVE O VALOR EM W P/ O REGISTRADOR CCPR2L
+
+	BSF		CCP2CON,4		;SETA CCP2CON BIT 4 P/ VELOCIDADE DESEJADA DE 3%
+	BSF		CCP2CON,5		;SETA CCP2CON BIT 5 P/ VELOCIDADE DESEJADA DE 3%
+
+	BSF		PORTB,4			;LIGANDO O MOTOR
+	BCF		PORTB,5			;LIGANDO O MOTOR
+
+	BSF		ESTADO_MOTOR	;SETA A FLAG DE ESTADO DO MOTOR
+	
+	GOTO	MAIN			;VOLTA PARA O MAIN
+
+DESLIGA_MOTOR
+
+	BCF		PORTB,4			;DESLIGANDO O MOTOR
+	BCF		PORTB,5			;DESLIGANDO O MOTOR
+
+	BCF		ESTADO_MOTOR	;LIMPANDO A TRAVA DO MOTOR
+
+	GOTO	FIM_INT			;VAI P/ O FIM DA INTERRUPCAO
+
+FIM_INT
+	
+	BCF		INTCON,5		;ABRE A CHAVE DE INTERRUPÇÃO, PARANDO-A
+
+	GOTO	MAIN			;RETORNA PRO MAIN
+
+CALCULO_MEDIA
+
+	CLRF	MEDIA			;LIMPA O REGISTRADOR DE MEDIA
+	CLRF	ENDERECO		;LIMPA O REGISTRADOR DE ENDERECO
+	CLRF	MEDIA_RESTO		;LIMPA O REGISTRADOR DE MEDIA_RESTO
+
+	CALL	LEIT_E2PROM		;CHAMA A ROTINA DE LEITURA DA E2PROM
+	MOVF	DADO,W			;MOVE O VALOR DE DADO P/ W
+	MOVWF	DIVIDENDO		;MOVE O VALOR DE W P/ DIVIDENDO
+	MOVLW	.3				;MOVE O VALOR 3 P/ W
+	MOVWF	DIVISOR			;MOVE O VALOR DE W P/ DIVISOR
+	CALL	DIVIDE_8x8		;CHAMA A ROTINA DE DIVIDIR 8BITS POR 8BITS
+	MOVF	QUOCIENTE,W		;MOVE O VALOR DO REGISTRADOR QUOCIENTE P/ W
+	ADDWF	MEDIA			;SOMA O VALOR DE W EM MEDIA
+	MOVF	RESTO,W			;MOVE O VALOR DE RESTO P/ W
+	ADDWF	MEDIA_RESTO		;SOMA O VALOR DE W EM MEDIA_RESTO 
+
+	INCF	ENDERECO		;INCREMENTA O VALOR DO REGISTRADOR ENDERECO
+
+	CALL	LEIT_E2PROM		;CHAMA A ROTINA DE LEITURA DA E2PROM
+	MOVF	DADO,W			;MOVE O VALOR DE DADO P/ W
+	MOVWF	DIVIDENDO		;MOVE O VALOR DE W P/ DIVIDENDO
+	MOVLW	.3				;MOVE O VALOR 3 P/ W
+	MOVWF	DIVISOR			;MOVE O VALOR DE W P/ DIVISOR
+	CALL	DIVIDE_8x8		;CHAMA A ROTINA DE DIVIDIR 8BITS POR 8BITS
+	MOVF	QUOCIENTE,W		;MOVE O VALOR DO REGISTRADOR QUOCIENTE P/ W
+	ADDWF	MEDIA			;SOMA O VALOR DE W EM MEDIA
+	MOVF	RESTO,W			;MOVE O VALOR DE RESTO P/ W
+	ADDWF	MEDIA_RESTO		;SOMA O VALOR DE W EM MEDIA_RESTO
+
+	INCF	ENDERECO		;INCREMENTA O VALOR DO REGISTRADOR ENDERECO
+
+	CALL	LEIT_E2PROM		;CHAMA A ROTINA DE LEITURA DA E2PROM
+	MOVF	DADO,W			;MOVE O VALOR DE DADO P/ W
+	MOVWF	DIVIDENDO		;MOVE O VALOR DE W P/ DIVIDENDO
+	MOVLW	.3				;MOVE O VALOR 3 P/ W
+	MOVWF	DIVISOR			;MOVE O VALOR DE W P/ DIVISOR
+	CALL	DIVIDE_8x8		;CHAMA A ROTINA DE DIVIDIR 8BITS POR 8BITS
+	MOVF	QUOCIENTE,W		;MOVE O VALOR DO REGISTRADOR QUOCIENTE P/ W
+	ADDWF	MEDIA			;SOMA O VALOR DE W EM MEDIA
+	MOVF	RESTO,W			;MOVE O VALOR DE RESTO P/ W
+	ADDWF	MEDIA_RESTO		;SOMA O VALOR DE W EM MEDIA_RESTO
+
+	MOVF	MEDIA_RESTO,W	;MOVE MEDIA_RESTO P/ W
+	MOVWF	DIVIDENDO		;MOVE W P/ DIVIDENDO
+	MOVLW	.3				;MOVE 3 P/ W
+	MOVWF	DIVISOR			;MOVE W P/ DIVISOR
+	CALL	DIVIDE_8x8		;CHAMA A ROTINA PARA DIVIDIR 8BITS POR 8BITS
+	MOVF	QUOCIENTE,W		;MOVE QUOCIENTE P/ W
+	ADDWF	MEDIA			;SOMA O VALOR EM MEDIA
+	
+	MOVF	RESTO,W			;MOVE RESTO P/ W
+	MOVWF	MULT_1_L		;MOVE W P/ MULT_1_L
+	MOVLW	B'00000000'		;MOVE 0 P/ W
+	MOVWF	MULT_1_H		;MOVE W P/ MULT_1_H
+	MOVLW	.3				;MOVE 3 P/ W
+	MOVWF	MULT_2			;MOVE W P/ MULT_2
+
+	CALL	MULTIPLICA_10x8	;CHAMA A ROTINA QUE MULTIPLICA 10BITS POR 8BITS
+
+	MOVF	PRODUTO_L,W		;MOVE O VALOR DE PRODUTO_L P/ W
+	MOVWF	MEDIA_RESTO		;MOVE O VALOR DE W P/ MEDIA_RESTO
+
+	RETURN					;RETORNA
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;*                ARQUIVOS INCLUDES PERSONALIZADOS                 *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;ARQUIVOS EXTERNOS CRIADOS PELO PROGRAMADOR.
+#INCLUDE<DISPLAY.INC>
+#INCLUDE<OPARITH.INC>
+#INCLUDE<TECLADO.INC>
+#INCLUDE<E2PROM.INC>
+
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+;*                       FIM DO PROGRAMA                           *
+;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+	END	;OBRIGATÓRIO.

@@ -1,0 +1,3205 @@
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00001 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00002 ;*                Gerenciador de Caixas Rápidos                    *
+                      00003 ;*                         Ruahn Fuser                             *
+                      00004 ;*                       DESENVOLVIDO POR GABRIEL MATIAS                               *
+                      00005 ;*   VERSÃO: 2.1                           DATA: 10/06/2018        *
+                      00006 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00007 ;*                     DESCRIÇÃO DO ARQUIVO                        *
+                      00008 ;*-----------------------------------------------------------------*
+                      00009 ;*  MODELO PARA PIC 16F877                                             *
+                      00010 ;* Programa para gerenciamento de caixas rápidos de supermercados, *
+                      00011 ;* agilizando filas e obtendo certas caracteristicas dos clientes. *
+                      00012 ;*                                                                                                 *
+                      00013 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00014 ;*             CONFIGURAÇÃO DOS JUMPERS DE PLACA                   *
+                      00015 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00016 ;* Teclado: Linha - CH3: 1 a 4; e Coluna - CH5: 1 a 4              *
+                      00017 ;* Motor DC PWM: CH5: 5 e 6; e CH2: 1                              *
+                      00018 ;* LCD: CH4; e Controle: CH6: 1 e 2                                *
+                      00019 ;* Buzzer: CH1: 6                                                                          *            
+                                                                               
+                      00020 ;*                                                                 *
+                      00021 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00022 ;*                CONFIGURAÇÃO PARA GRAVAÇÃO (FUSES)                       *
+                      00023 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+Warning[205]: Found directive in column 1. (__CONFIG)
+2007   373A           00024 __CONFIG _WDT_OFF & _HS_OSC & _LVP_OFF & _DEBUG_ON & _BODEN_OFF
+                      00025 
+                      00026 ;_CP_OFF        ==> MEMÓRIA DE PROGRAMA DESPROTEGIDA CONTRA LEITURA.
+                      00027 ;_WRT_OFF       ==> SEM PERMISSÃO PARA ESCREVER NA MEMÓRIA DE PROGRAMA
+                      00028 ;                               DURANTE EXECUÇÃO DO PROGRAMA.
+                      00029 ;_DEBUG_ON      ==> DEBUG ATIVADO.
+                      00030 ;_CPD_OFF       ==> MEMÓRIA EEPROM PROTEGIDA CONTRA LEITURA.
+                      00031 ;_LVP_OFF       ==> PROGRAMAÇÃO EM BAIXA TENSÃO DESABILITADA.
+                      00032 ;_WDT_OFF       ==> WDT DESATIVADO.
+                      00033 ;_BODEN_OFF     ==> BROWN-OUT DESATIVADO. 
+                      00034 ;_PWRTE_ON      ==> POWER-ON RESET ATIVADO.
+                      00035 ;_XT_OSC        ==> OSCILADOR CRISTAL (4MHz).
+                      00036 
+                      00037 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00038 ;*                     ARQUIVOS DE DEFINIÇÕES                      *
+                      00039 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00040 #INCLUDE <P16F877.INC>  ;ARQUIVO PADRÃO MICROCHIP PARA 16F877.
+                      00001         LIST
+                      00002 
+                      00003 ;==========================================================================
+                      00004 ;  MPASM PIC16F877 processor include
+                      00005 ; 
+                      00006 ;  (c) Copyright 1999-2013 Microchip Technology, All rights reserved
+                      00007 ;==========================================================================
+                      00008 
+                      00540         LIST
+                      00041 
+                      00042 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00043 ;*                    PAGINAÇÃO DE MEMÓRIA                         *
+                      00044 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00045 ;DEFINIÇÃO DE COMANDOS DE USUÁRIO PARA ALTERAÇÃO DA PÁGINA DE MEMÓRIA
+                      00046 
+                      00047 BANK0   MACRO                                   ;SELECIONA BANK0 DE MEMÓRIA.
+                      00048                                 bcf STATUS,RP1
+                      00049                                 bcf     STATUS,RP0
+                      00050                 ENDM                                    ;FIM DA MACRO BANK0.
+                      00051 
+                      00052 BANK1   MACRO                                   ;SELECIONA BANK1 DE MEMÓRIA.
+                      00053                                 bcf STATUS,RP1
+                      00054                                 bsf     STATUS,RP0
+                      00055                 ENDM                                    ;FIM DA MACRO BANK1.
+                      00056 
+                      00057 BANK2   MACRO                                   ;SELECIONA BANK2 DE MEMÓRIA.
+                      00058                                 bsf STATUS,RP1
+                      00059                                 bcf     STATUS,RP0
+                      00060                 ENDM                                    ;FIM DA MACRO BANK2.
+                      00061 
+                      00062 BANK3   MACRO                                   ;SELECIONA BANK3 DE MEMÓRIA.
+                      00063                                 bsf STATUS,RP1
+                      00064                                 bsf     STATUS,RP0
+                      00065                 ENDM                                    ;FIM DA MACRO BANK3.
+                      00066 
+                      00067 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00068 ;*                         VARIÁVEIS                               *
+                      00069 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00070 ; DEFINIÇÃO DOS NOMES E ENDEREÇOS DE TODAS AS VARIÁVEIS UTILIZADAS 
+                      00071 ; PELO SISTEMA.
+                      00072         CBLOCK  0x20            ;ENDEREÇO INICIAL DA MEMÓRIA DE
+                      00073                                                 ;USUÁRIO.
+  00000020            00074                 W_TEMP                  ;REGISTRADORES TEMPORÁRIOS PARA USO
+  00000021            00075                 STATUS_TEMP             ;JUNTO ÀS INTERRUPÇÕES.
+  00000022            00076                 FLAGS                   ;VARIAVEL P/ FLAGS
+  00000023            00077                 FILTER                  ;VARIAVEL DE DEBOUNCING
+  00000024            00078                 FILTER2                 ;VARIAVEL DE DEBOUNCING
+  00000025            00079                 MULT_TMP                ;VARIAVEL DO ARQUIVO OPARITH.INC
+  00000026            00080                 MULT_1                  ;VARIAVEL DO ARQUIVO OPARITH.INC
+  00000027            00081                 MULT_1_H                ;VARIAVEL DO ARQUIVO OPARITH.INC
+  00000028            00082                 MULT_1_L                ;VARIAVEL DO ARQUIVO OPARITH.INC
+  00000029            00083                 MULT_2                  ;VARIAVEL DO ARQUIVO OPARITH.INC
+  0000002A            00084                 PRODUTO                 ;VARIAVEL DO ARQUIVO OPARITH.INC
+  0000002B            00085                 PRODUTO_H               ;VARIAVEL DO ARQUIVO OPARITH.INC
+  0000002C            00086                 PRODUTO_L               ;VARIAVEL DO ARQUIVO OPARITH.INC
+  0000002D            00087                 QUOCIENTE_H             ;VARIAVEL DO ARQUIVO OPARITH.INC
+  0000002E            00088                 QUOCIENTE_L             ;VARIAVEL DO ARQUIVO OPARITH.INC
+  0000002F            00089                 DIVIDENDO_H             ;VARIAVEL DO ARQUIVO OPARITH.INC
+  00000030            00090                 DIVIDENDO_L             ;VARIAVEL DO ARQUIVO OPARITH.INC
+  00000031            00091                 DIVIDENDOTMP_H  ;VARIAVEL DO ARQUIVO OPARITH.INC
+  00000032            00092                 DIVIDENDOTMP_L  ;VARIAVEL DO ARQUIVO OPARITH.INC
+  00000033            00093                 RESTOTMP_H              ;VARIAVEL DO ARQUIVO OPARITH.INC
+  00000034            00094                 RESTOTMP_L              ;VARIAVEL DO ARQUIVO OPARITH.INC
+  00000035            00095                 DIVISOR_H               ;VARIAVEL DO ARQUIVO OPARITH.INC
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+  00000036            00096                 DIVISOR_L               ;VARIAVEL DO ARQUIVO OPARITH.INC
+  00000037            00097                 DIVISORTMP_H    ;VARIAVEL DO ARQUIVO OPARITH.INC
+  00000038            00098                 DIVISORTMP_L    ;VARIAVEL DO ARQUIVO OPARITH.INC
+  00000039            00099                 RESTO_H                 ;VARIAVEL DO ARQUIVO OPARITH.INC
+  0000003A            00100                 RESTO_L                 ;VARIAVEL DO ARQUIVO OPARITH.INC
+  0000003B            00101                 QUOCIENTE               ;VARIAVEL DO ARQUIVO OPARITH.INC
+  0000003C            00102                 DIVIDENDO               ;VARIAVEL DO ARQUIVO OPARITH.INC
+  0000003D            00103                 RESTO                   ;VARIAVEL DO ARQUIVO OPARITH.INC
+  0000003E            00104                 DIVISOR                 ;VARIAVEL DO ARQUIVO OPARITH.INC
+  0000003F            00105                 MINUENDO_H              ;VARIAVEL DO ARQUIVO OPARITH.INC
+  00000040            00106                 MINUENDO_L              ;VARIAVEL DO ARQUIVO OPARITH.INC
+  00000041            00107                 DIFERENCA_H             ;VARIAVEL DO ARQUIVO OPARITH.INC
+  00000042            00108                 DIFERENCA_L             ;VARIAVEL DO ARQUIVO OPARITH.INC
+  00000043            00109                 SUBTRAENDO_H    ;VARIAVEL DO ARQUIVO OPARITH.INC
+  00000044            00110                 SUBTRAENDO_L    ;VARIAVEL DO ARQUIVO OPARITH.INC
+  00000045            00111                 CAIXA                   ;VARIAVEL DE CAIXA LIVRE
+  00000046            00112                 CONTADOR                ;VARIAVEL P/ CONTAGEM DE ATENDIMENTOS
+  00000047            00113                 BATATA                  ;VARIAVEL P/ MANIPULACAO DE DIGITOS
+  00000048            00114                 DIGITO1                 ;VARIAVEL P/ MOSTRAR DIGITOS NO DISPLAY
+  00000049            00115                 DIGITO2                 ;VARIAVEL P/ MOSTRAR DIGITOS NO DISPLAY
+  0000004A            00116                 DIGITO3                 ;VARIAVEL P/ MOSTRAR DIGITOS NO DISPLAY
+  0000004B            00117                 DADO                    ;VARIAVEL P/ USO DA E2PROM
+  0000004C            00118                 ENDERECO                ;VARIAVEL P/ USO DA E2PROM
+  0000004D            00119                 DIGEND1                 ;VARIAVEL P/ USO DO DISPLAY COM E2PROM
+  0000004E            00120                 DIGEND2                 ;VARIAVEL P/ USO DO DISPLAY COM E2PROM
+  0000004F            00121                 TIME_1S                 ;VARIAVEL DE INTERRUPCAO DE 1s
+  00000050            00122                 TIME_10S                ;VARIAVEL DE INTERRUPCAO DE 10s
+  00000051            00123                 MEDIA                   ;VARIAVEL P/ CALCULO DA MEDIA
+  00000052            00124                 MEDIA_RESTO             ;VARIAVEL P/ CALCULO DO RESTO
+                      00125 
+                      00126                 ;NOVAS VARIÁVEIS
+                      00127 
+                      00128         ENDC                    ;FIM DO BLOCO DE MEMÓRIA
+                      00129 
+                      00130 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00131 ;*                        FLAGS INTERNOS                           *
+                      00132 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00133 ; DEFINIÇÃO DE TODOS OS FLAGS UTILIZADOS PELO SISTEMA.
+                      00134 
+                      00135 ;REGISTRADOR FLAGS:
+                      00136 ;x = DEFINIDO EM OUTRO LUGAR DA TABELA.
+                      00137 ;* =  DEFINIDO COMO MOSTRADO (0/1).
+                      00138 
+                      00139 ;BIT  # |7|6|5|4|3|2|1|0|
+                      00140 ;               -----------------
+                      00141 ;       |x|x|x|x|x|x|x|*|       ESTADO_BOTAO    
+                      00142 ;       |x|x|x|x|x|x|*|x|       ESTADO_DISPLAY
+                      00143 ;       |x|x|x|x|x|*|x|x|       ESTADO_E2PROM
+                      00144 ;       |x|x|x|x|*|x|x|x|       FLAG_1S
+                      00145 ;       |x|x|x|*|x|x|x|x|       FLAG_10S        
+                      00146 ;       |x|x|*|x|x|x|x|x|       ESTADO_MOTOR
+                      00147 ;       |x|*|x|x|x|x|x|x|       FIM_MEDIA
+                      00148 ;       |*|x|x|x|x|x|x|x|       RESTO_0
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE  4
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00149 
+                      00150 #DEFINE ESTADO_BOTAO FLAGS,0
+                      00151 #DEFINE ESTADO_DISPLAY FLAGS,1
+                      00152 #DEFINE ESTADO_E2PROM FLAGS,2
+                      00153 #DEFINE FLAG_1S FLAGS,3
+                      00154 #DEFINE FLAG_10S FLAGS,4
+                      00155 #DEFINE ESTADO_MOTOR FLAGS,5
+                      00156 #DEFINE FIM_MEDIA FLAGS,6
+                      00157 #DEFINE RESTO_0 FLAGS,7
+                      00158 
+                      00159 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00160 ;*                         CONSTANTES                              *
+                      00161 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00162 ; DEFINIÇÃO DE TODAS AS CONSTANTES UTILIZADAS PELO SISTEMA.
+  0000015E            00163 T1      EQU     .350                            ;CONSTANTE DO DELAY
+  000000AF            00164 T2      EQU     .175                            ;CONSTANTE DO DELAY
+                      00165 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00166 ;*                           ENTRADAS                              *
+                      00167 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00168 ; DEFINIÇÃO DE TODOS OS PINOS QUE SERÃO UTILIZADOS COMO ENTRADA
+                      00169 ; COMENTAR O SIGNIFICADO DE SEUS ESTADOS (0 E 1).
+                      00170 
+                      00171 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00172 ;*                           SAÍDAS                                *
+                      00173 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00174 ; DEFINIÇÃO DE TODOS OS PINOS QUE SERÃO UTILIZADOS COMO SAÍDA
+                      00175 ; COMENTAR O SIGNIFICADO DE SEUS ESTADOS (0 E 1)
+                      00176 
+                      00177 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00178 ;*                       VETOR DE RESET                            *
+                      00179 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00180 
+                      00181         ORG     0x00                            ;ENDEREÇO INICIAL DE PROCESSAMENTO.
+0000   2???           00182         goto    INICIO
+                      00183         
+                      00184 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00185 ;*                    INÍCIO DA INTERRUPÇÃO                        *
+                      00186 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00187 ; ENDEREÇO DE DESVIO DAS INTERRUPÇÕES. A PRIMEIRA TAREFA É SALVAR OS
+                      00188 ; VALORES DE "W" E "STATUS" PARA RECUPERAÇÃO FUTURA.
+                      00189 
+                      00190         ORG     0x04                            ;ENDEREÇO INICIAL DA INTERRUPÇÃO.
+0004   00A0           00191         movwf   W_TEMP                  ;COPIA W PARA W_TEMP.
+0005   0E03           00192         swapf   STATUS,W
+0006   00A1           00193         movwf   STATUS_TEMP             ;COPIA STATUS PARA STATUS_TEMP.
+                      00194 
+                      00195 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00196 ;*                    ROTINA DE INTERRUPÇÃO                        *
+                      00197 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00198 ; ROTINAS DE RECONHECIMENTO E TRATAMENTO DAS INTERRUPÇÕES
+0007   110B           00199         BCF             INTCON,2                ;LIMPA FLAG TOIF, ESTOURO TMR0
+                      00200         
+Message[305]: Using default destination of 1 (file).
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE  5
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0008   0BCF           00201         DECFSZ  TIME_1S                 ;DECREMENTA A VARIAVEL TIME_P E PULA SE FOR 0
+0009   2???           00202         GOTO    SAI_INT                 ;SAI DA INTERRUPÇÃO
+000A   15A2           00203         BSF             FLAG_1S                 ;SETA A FLAG DE 1s
+                      00204 
+Message[305]: Using default destination of 1 (file).
+000B   0BD0           00205         DECFSZ  TIME_10S                ;DECREMENTA A VARIAVEL TIME_B E PULA SE FOR 0
+000C   2???           00206         GOTO    SAI_INT                 ;SAI DA INTERRUPCAO
+000D   1622           00207         BSF             FLAG_10S                ;SETA A FLAG DE 10s
+                      00208 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00209 ;*                 ROTINA DE SAÍDA DA INTERRUPÇÃO                  *
+                      00210 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00211 ; OS VALORES DE "W" E "STATUS" DEVEM SER RECUPERADOS ANTES DE 
+                      00212 ; RETORNAR DA INTERRUPÇÃO
+000E                  00213 SAI_INT
+000E   0E21           00214         swapf   STATUS_TEMP,W
+000F   0083           00215         movwf   STATUS                  ;MOVE STATUS_TEMP PARA STATUS.
+0010   0EA0           00216         swapf   W_TEMP,F
+0011   0E20           00217         swapf   W_TEMP,W                ;MOVE W_TEMP PARA W.
+0012   0009           00218         retfie
+                      00219 
+                      00220 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00221 ;*                       ROTINAS E SUBROTINAS                              *
+                      00222 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00223 ; CADA ROTINA OU SUBROTINA DEVE POSSUIR A DESCRIÇÃO DE FUNCIONAMENTO
+                      00224 ; E UM NOME COERENTE ÀS SUAS FUNÇÕES.
+0013                  00225 FILTRO
+Warning[202]: Argument out of range.  Least significant bits used.
+0013   305E           00226         MOVLW   T1                              ;DELAY
+0014   00A3           00227         MOVWF   FILTER                  ;DELAY
+                      00228 
+0015                  00229 FILTRO2
+0015   30AF           00230         MOVLW   T2                              ;DELAY
+0016   00A4           00231         MOVWF   FILTER2                 ;DELAY
+Message[305]: Using default destination of 1 (file).
+0017   0BA4           00232         DECFSZ  FILTER2                 ;DELAY
+0018   2???           00233         GOTO    $-1                             ;DELAY
+Message[305]: Using default destination of 1 (file).
+0019   0BA3           00234         DECFSZ  FILTER                  ;DELAY
+001A   2???           00235         GOTO    FILTRO2                 ;DELAY
+                      00236         
+001B   0008           00237         RETURN                                  ;RETORNA
+                      00238 
+                      00239 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00240 ;*                     INÍCIO DO PROGRAMA                          *
+                      00241 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00242         
+001C                  00243 INICIO:
+001C   0185           00244         clrf    PORTA                   ;LIMPANDO AS PORTAS P/ INICIO DO PROGRAMA
+001D   0186           00245         clrf    PORTB                   ;LIMPANDO AS PORTAS P/ INICIO DO PROGRAMA
+001E   0187           00246         clrf    PORTC                   ;LIMPANDO AS PORTAS P/ INICIO DO PROGRAMA
+001F   0188           00247         clrf    PORTD                   ;LIMPANDO AS PORTAS P/ INICIO DO PROGRAMA
+0020   0189           00248         clrf    PORTE                   ;LIMPANDO AS PORTAS P/ INICIO DO PROGRAMA
+                      00249 
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE  6
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00250 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00251 ;*              CONFIGURAÇÃO DO MICROCONTROLADOR                   *
+                      00252 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00253 
+                      00254         BANK1                           ;ALTERA PARA O BANCO 1.
+0021   1303               M                                 bcf STATUS,RP1
+0022   1683               M                                 bsf     STATUS,RP0
+0023   3000           00255         movlw   B'00000000'
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0024   0085           00256         movwf   TRISA           ;DEFINE ENTRADAS E SAÍDAS DO PORTA.
+0025   300F           00257         movlw   B'00001111'
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0026   0086           00258         movwf   TRISB           ;DEFINE ENTRADAS E SAÍDAS DO PORTB.
+0027   3000           00259         movlw   B'00000000'
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0028   0087           00260         movwf   TRISC           ;DEFINE ENTRADAS E SAÍDAS DO PORTA.
+0029   3000           00261         movlw   B'00000000'
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+002A   0088           00262         movwf   TRISD           ;DEFINE ENTRADAS E SAÍDAS DO PORTB.
+002B   3000           00263         movlw   B'00000000'
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+002C   0089           00264         movwf   TRISE           ;DEFINE ENTRADAS E SAÍDAS DO PORTB.
+                      00265 
+002D   30C7           00266         movlw   B'11000111'
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+002E   0081           00267         movwf   OPTION_REG      ;DEFINE OPÇÕES DE OPERAÇÃO.
+                      00268                                                 ;PULL-UPS DESABILITADOS </RBPU>.
+                      00269                                                 ;INT. NA BORDA DE SUBIDA EM RB0 <INTEDG>.
+                      00270                                                 ;TIMER0 INCR. PELO CICLO DE MÁQUINA <TOCS>.
+                      00271                                                 ;PRESCALER APLICADO AO WDT <PSA>.
+                      00272                                                 ;WDT 1:128, TMR0 1:1 <PS2:PS0>.
+                      00273         
+002F   3084           00274         movlw   B'10000100'
+0030   008B           00275         movwf   INTCON          ;DEFINE OPÇÕES DE INTERRUPÇÕES;
+                      00276                                                 ;TODAS AS INTERRUPÇÕES DESABILITADAS.
+                      00277         
+0031   3007           00278         movlw   B'00000111'
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0032   009F           00279         movwf   ADCON1          ;CONFIGURA CONVERSOR A/D.
+                      00280                                                 ;CONFIGURA PORTA E PORTE COMO I/O DIGITAL.
+                      00281 
+0033   30F9           00282         MOVLW   B'11111001'     ;DECIMAL 249
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0034   0092           00283         MOVWF   PR2                     ;DEFINE AS OPCOES DE PWM
+                      00284 
+                      00285         BANK0                           ;RETORNA PARA O BANCO 0.
+0035   1303               M                                 bcf STATUS,RP1
+0036   1283               M                                 bcf     STATUS,RP0
+                      00286 
+0037   3006           00287         MOVLW   B'00000110'
+0038   0092           00288         MOVWF   T2CON           ;DEFINE AS OPCOES DO TIMER2
+                      00289 
+                      00290 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE  7
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00291 ;*                      INICIALIZAÇÃO DA RAM                       *
+                      00292 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00293 ;  LIMPEZA DE TODA A RAM DO BANC0 0, INDO DE 0X20 A 0X7F.
+                      00294 
+0039   3020           00295         movlw   0x20
+003A   0084           00296         movwf   FSR                             ;APONTA O ENDEREÇAMENTO INDIRETO PARA
+                      00297                                                         ;A PRIMEIRA POSIÇÃO DA RAM.
+003B                  00298 LIMPA_RAM
+003B   0180           00299         clrf    INDF                    ;LIMPA A POSIÇÃO ATUAL.
+003C   0A84           00300         incf    FSR,F                   ;INCREMENTA PONTEIRO P/ A PRÓX. POS.
+003D   0804           00301         movf    FSR,W
+003E   3A80           00302         xorlw   0x80                    ;COMPARA PONTEIRO COM A ÚLT. POS. +1.
+003F   1D03           00303         btfss   STATUS,Z                ;JÁ LIMPOU TODAS AS POSIÇÕES?
+0040   2???           00304         goto    LIMPA_RAM               ;NÃO, LIMPA A PRÓXIMA POSIÇÃO.
+                      00305                                                         ;SIM, CONTINUA O PROGRAMA.
+                      00306 
+                      00307 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00308 ;*               INICIALIZAÇÃO DAS VARIÁVEIS E SFRs                *
+                      00309 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00310 ;  ATRIBUIÇÃO DE VALORES INICIAIS ÀS VARIÁVEIS CRIADAS NA RAM.
+                      00311 
+0041   30FF           00312         MOVLW   B'11111111'             ;DEFINE VALORES P/ O PORTC
+0042   0087           00313         MOVWF   PORTC                   ;DEFINE VALORES P/ O PORTC
+0043   30FF           00314         MOVLW   B'11111111'             ;DEFINE VALORES P/ O PORTD
+0044   0088           00315         MOVWF   PORTD                   ;DEFINE VALORES P/ O PORTC
+0045   1022           00316         BCF             ESTADO_BOTAO    ;LIMPA FLAG DE ESTADO DO BOTAO
+0046   10A2           00317         BCF             ESTADO_DISPLAY  ;LIMPA FLAG DE ESTADO DO DISPLAY
+0047   1122           00318         BCF             ESTADO_E2PROM   ;LIMPA FLAG DE ESTADO DA E2PROM
+0048   12A2           00319         BCF             ESTADO_MOTOR    ;LIMPA FLAG DE ESTADO DO MOTOR
+0049   11A2           00320         BCF             FLAG_1S                 ;LIMPA FLAG DE ESTADO DA INTERRUPCAO
+004A   1222           00321         BCF             FLAG_10S                ;LIMPA FLAG DE ESTADO DA INTERRUPCAO
+004B   1322           00322         BCF             FIM_MEDIA               ;LIMPA FLAG DE ESTADO DO FIM DA MEDIA
+004C   13A2           00323         BCF             RESTO_0                 ;LIMPA FLAG DE ESTADO DO RESTO
+004D   3000           00324         MOVLW   0x00                    ;MOVE O VALOR 0 P/ W
+004E   00C6           00325         MOVWF   CONTADOR                ;MOVE O VALOR P/ CONTADOR
+004F   01D1           00326         CLRF    MEDIA                   ;LIMPA O REGISTRADOR MEDIA
+0050   01D2           00327         CLRF    MEDIA_RESTO             ;LIMPA O REGISTRADOR MEDIA_RESTO
+0051   01CC           00328         CLRF    ENDERECO                ;LIMPA O REGISTRADOR DE ENDERECO
+                      00329 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00330 ;*                     ROTINA PRINCIPAL                            *
+                      00331 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+0052                  00332 MAIN
+                      00333         
+0052   1CA2           00334         BTFSS   ESTADO_DISPLAY  ;TESTA A FLAG DO DISPLAY P/ INICIA-LO
+0053   2???           00335         CALL    INICIALIZA_LCD  ;VAI P/ A ROTINA DE INICIO DO DISPLAY
+                      00336 
+0054   19A2           00337         BTFSC   FLAG_1S                 ;TESTA A FLAG DE 1s
+0055   2???           00338         GOTO    PASSOU_1S               ;VAI P/ A ROTINA QUE RESETA O CONTADOR DE 1s
+                      00339 
+0056   1A22           00340         BTFSC   FLAG_10S                ;TESTA A FLAG DE 10s
+0057   2???           00341         GOTO    PASSOU_10S              ;VAI P/ A ROTINA QUE RESETA O CONTADOR DE 10s
+                      00342 
+0058   2???           00343         GOTO    TECLADO                 ;VAI P/ A ROTINA DE TECLADO
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE  8
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00344 
+0059                  00345 PASSOU_1S
+                      00346         
+0059   11A2           00347         BCF             FLAG_1S                 ;LIMPA A FLAG DE 1s
+005A   303E           00348         MOVLW   .62                             ;MOVE O VALOR LITERAL 62 PARA O REGISTRADOR W
+005B   00CF           00349         MOVWF   TIME_1S                 ;MOVE O VALOR DE W PARA A VARIAVEL TIME_1S
+                      00350         
+005C   2???           00351         GOTO    MAIN                    ;RETORNA PRO MAIN
+                      00352 
+005D                  00353 PASSOU_10S
+                      00354         
+005D   1222           00355         BCF             FLAG_10S                ;LIMPA A FLAG DE 10s
+005E   300A           00356         MOVLW   .10                             ;PASSA O VALOR LITERAL 10 PARA O REGISTRADOR W
+005F   00D0           00357         MOVWF   TIME_10S                ;MOVE O VALOR DE W PARA A VARIAVEL TIME_10S
+                      00358 
+0060   1AA2           00359         BTFSC   ESTADO_MOTOR    ;TESTA FLAG DO ESTADO DO MOTOR
+0061   2???           00360         GOTO    DESLIGA_MOTOR   ;VAI P/ A ROTINA DE DESLIGAR O MOTOR
+                      00361 
+0062   2???           00362         GOTO    LIGA_MOTOR              ;VAI P/ A ROTINA DE LIGAR O MOTOR
+                      00363         
+0063                  00364 INTERRUPT
+                      00365         
+0063   11A2           00366         BCF             FLAG_1S                 ;LIMPA A FLAG DE 1s
+0064   1222           00367         BCF             FLAG_10S                ;LIMPA A FLAG DE 10s
+0065   303E           00368         MOVLW   .62                             ;MOVE O VALOR LITERAL 62 PARA O REGISTRADOR W
+0066   00CF           00369         MOVWF   TIME_1S                 ;MOVE O VALOR DE W PARA A VARIAVEL TIME_1S
+0067   300A           00370         MOVLW   .10                             ;MOVE O VALOR LITERAL 10 PARA O REGISTRADOR W
+0068   00D0           00371         MOVWF   TIME_10S                ;MOVE O VALOR DE W PARA A VARIAVEL TIME_10
+0069   0181           00372         CLRF    TMR0                    ;LIMPA O CONTADOR DO TMR0
+006A   168B           00373         BSF             INTCON,5                ;FECHA A CHAVE DE INTERRUPÇÃO, INICIANDO-A
+                      00374         
+006B   0008           00375         RETURN                                  ;RETORNA
+                      00376 
+006C                  00377 LIGA_MOTOR
+                      00378         
+006C   3007           00379         MOVLW   B'00000111'             ;VELOCIDADE DESEJADA DE 3%
+006D   009B           00380         MOVWF   CCPR2L                  ;MOVE O VALOR EM W P/ O REGISTRADOR CCPR2L
+                      00381 
+006E   161D           00382         BSF             CCP2CON,4               ;SETA CCP2CON BIT 4 P/ VELOCIDADE DESEJADA DE 3%
+006F   169D           00383         BSF             CCP2CON,5               ;SETA CCP2CON BIT 5 P/ VELOCIDADE DESEJADA DE 3%
+                      00384 
+0070   1606           00385         BSF             PORTB,4                 ;LIGANDO O MOTOR
+0071   1286           00386         BCF             PORTB,5                 ;LIGANDO O MOTOR
+                      00387 
+0072   16A2           00388         BSF             ESTADO_MOTOR    ;SETA A FLAG DE ESTADO DO MOTOR
+                      00389         
+0073   2???           00390         GOTO    MAIN                    ;VOLTA PARA O MAIN
+                      00391 
+0074                  00392 DESLIGA_MOTOR
+                      00393 
+0074   1206           00394         BCF             PORTB,4                 ;DESLIGANDO O MOTOR
+0075   1286           00395         BCF             PORTB,5                 ;DESLIGANDO O MOTOR
+                      00396 
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE  9
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0076   12A2           00397         BCF             ESTADO_MOTOR    ;LIMPANDO A TRAVA DO MOTOR
+                      00398 
+0077   2???           00399         GOTO    FIM_INT                 ;VAI P/ O FIM DA INTERRUPCAO
+                      00400 
+0078                  00401 FIM_INT
+                      00402         
+0078   128B           00403         BCF             INTCON,5                ;ABRE A CHAVE DE INTERRUPÇÃO, PARANDO-A
+                      00404 
+0079   2???           00405         GOTO    MAIN                    ;RETORNA PRO MAIN
+                      00406 
+007A                  00407 CALCULO_MEDIA
+                      00408 
+007A   01D1           00409         CLRF    MEDIA                   ;LIMPA O REGISTRADOR DE MEDIA
+007B   01CC           00410         CLRF    ENDERECO                ;LIMPA O REGISTRADOR DE ENDERECO
+007C   01D2           00411         CLRF    MEDIA_RESTO             ;LIMPA O REGISTRADOR DE MEDIA_RESTO
+                      00412 
+007D   2???           00413         CALL    LEIT_E2PROM             ;CHAMA A ROTINA DE LEITURA DA E2PROM
+007E   084B           00414         MOVF    DADO,W                  ;MOVE O VALOR DE DADO P/ W
+007F   00BC           00415         MOVWF   DIVIDENDO               ;MOVE O VALOR DE W P/ DIVIDENDO
+0080   3003           00416         MOVLW   .3                              ;MOVE O VALOR 3 P/ W
+0081   00BE           00417         MOVWF   DIVISOR                 ;MOVE O VALOR DE W P/ DIVISOR
+0082   2???           00418         CALL    DIVIDE_8x8              ;CHAMA A ROTINA DE DIVIDIR 8BITS POR 8BITS
+0083   083B           00419         MOVF    QUOCIENTE,W             ;MOVE O VALOR DO REGISTRADOR QUOCIENTE P/ W
+Message[305]: Using default destination of 1 (file).
+0084   07D1           00420         ADDWF   MEDIA                   ;SOMA O VALOR DE W EM MEDIA
+0085   083D           00421         MOVF    RESTO,W                 ;MOVE O VALOR DE RESTO P/ W
+Message[305]: Using default destination of 1 (file).
+0086   07D2           00422         ADDWF   MEDIA_RESTO             ;SOMA O VALOR DE W EM MEDIA_RESTO 
+                      00423 
+Message[305]: Using default destination of 1 (file).
+0087   0ACC           00424         INCF    ENDERECO                ;INCREMENTA O VALOR DO REGISTRADOR ENDERECO
+                      00425 
+0088   2???           00426         CALL    LEIT_E2PROM             ;CHAMA A ROTINA DE LEITURA DA E2PROM
+0089   084B           00427         MOVF    DADO,W                  ;MOVE O VALOR DE DADO P/ W
+008A   00BC           00428         MOVWF   DIVIDENDO               ;MOVE O VALOR DE W P/ DIVIDENDO
+008B   3003           00429         MOVLW   .3                              ;MOVE O VALOR 3 P/ W
+008C   00BE           00430         MOVWF   DIVISOR                 ;MOVE O VALOR DE W P/ DIVISOR
+008D   2???           00431         CALL    DIVIDE_8x8              ;CHAMA A ROTINA DE DIVIDIR 8BITS POR 8BITS
+008E   083B           00432         MOVF    QUOCIENTE,W             ;MOVE O VALOR DO REGISTRADOR QUOCIENTE P/ W
+Message[305]: Using default destination of 1 (file).
+008F   07D1           00433         ADDWF   MEDIA                   ;SOMA O VALOR DE W EM MEDIA
+0090   083D           00434         MOVF    RESTO,W                 ;MOVE O VALOR DE RESTO P/ W
+Message[305]: Using default destination of 1 (file).
+0091   07D2           00435         ADDWF   MEDIA_RESTO             ;SOMA O VALOR DE W EM MEDIA_RESTO
+                      00436 
+Message[305]: Using default destination of 1 (file).
+0092   0ACC           00437         INCF    ENDERECO                ;INCREMENTA O VALOR DO REGISTRADOR ENDERECO
+                      00438 
+0093   2???           00439         CALL    LEIT_E2PROM             ;CHAMA A ROTINA DE LEITURA DA E2PROM
+0094   084B           00440         MOVF    DADO,W                  ;MOVE O VALOR DE DADO P/ W
+0095   00BC           00441         MOVWF   DIVIDENDO               ;MOVE O VALOR DE W P/ DIVIDENDO
+0096   3003           00442         MOVLW   .3                              ;MOVE O VALOR 3 P/ W
+0097   00BE           00443         MOVWF   DIVISOR                 ;MOVE O VALOR DE W P/ DIVISOR
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 10
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0098   2???           00444         CALL    DIVIDE_8x8              ;CHAMA A ROTINA DE DIVIDIR 8BITS POR 8BITS
+0099   083B           00445         MOVF    QUOCIENTE,W             ;MOVE O VALOR DO REGISTRADOR QUOCIENTE P/ W
+Message[305]: Using default destination of 1 (file).
+009A   07D1           00446         ADDWF   MEDIA                   ;SOMA O VALOR DE W EM MEDIA
+009B   083D           00447         MOVF    RESTO,W                 ;MOVE O VALOR DE RESTO P/ W
+Message[305]: Using default destination of 1 (file).
+009C   07D2           00448         ADDWF   MEDIA_RESTO             ;SOMA O VALOR DE W EM MEDIA_RESTO
+                      00449 
+009D   0852           00450         MOVF    MEDIA_RESTO,W   ;MOVE MEDIA_RESTO P/ W
+009E   00BC           00451         MOVWF   DIVIDENDO               ;MOVE W P/ DIVIDENDO
+009F   3003           00452         MOVLW   .3                              ;MOVE 3 P/ W
+00A0   00BE           00453         MOVWF   DIVISOR                 ;MOVE W P/ DIVISOR
+00A1   2???           00454         CALL    DIVIDE_8x8              ;CHAMA A ROTINA PARA DIVIDIR 8BITS POR 8BITS
+00A2   083B           00455         MOVF    QUOCIENTE,W             ;MOVE QUOCIENTE P/ W
+Message[305]: Using default destination of 1 (file).
+00A3   07D1           00456         ADDWF   MEDIA                   ;SOMA O VALOR EM MEDIA
+                      00457         
+00A4   083D           00458         MOVF    RESTO,W                 ;MOVE RESTO P/ W
+00A5   00A8           00459         MOVWF   MULT_1_L                ;MOVE W P/ MULT_1_L
+00A6   3000           00460         MOVLW   B'00000000'             ;MOVE 0 P/ W
+00A7   00A7           00461         MOVWF   MULT_1_H                ;MOVE W P/ MULT_1_H
+00A8   3003           00462         MOVLW   .3                              ;MOVE 3 P/ W
+00A9   00A9           00463         MOVWF   MULT_2                  ;MOVE W P/ MULT_2
+                      00464 
+00AA   2???           00465         CALL    MULTIPLICA_10x8 ;CHAMA A ROTINA QUE MULTIPLICA 10BITS POR 8BITS
+                      00466 
+00AB   082C           00467         MOVF    PRODUTO_L,W             ;MOVE O VALOR DE PRODUTO_L P/ W
+00AC   00D2           00468         MOVWF   MEDIA_RESTO             ;MOVE O VALOR DE W P/ MEDIA_RESTO
+                      00469 
+00AD   0008           00470         RETURN                                  ;RETORNA
+                      00471 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00472 ;*                ARQUIVOS INCLUDES PERSONALIZADOS                 *
+                      00473 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00474 ;ARQUIVOS EXTERNOS CRIADOS PELO PROGRAMADOR.
+                      00475 #INCLUDE<DISPLAY.INC>
+00AE                  00001 INICIALIZA_LCD
+                      00002 
+00AE   1009           00003         BCF             PORTE,0                                 ;INICIALIZAÇÃO DO DISPLAY
+00AF   303C           00004         MOVLW   B'00111100'                             ;INICIALIZAÇÃO DO DISPLAY
+00B0   0088           00005         MOVWF   PORTD                                   ;INICIALIZAÇÃO DO DISPLAY
+00B1   2???           00006         CALL    GERA_PULSO                              ;INICIALIZAÇÃO DO DISPLAY
+00B2   303C           00007         MOVLW   B'00111100'                             ;INICIALIZAÇÃO DO DISPLAY
+00B3   0088           00008         MOVWF   PORTD                                   ;INICIALIZAÇÃO DO DISPLAY
+00B4   2???           00009         CALL    GERA_PULSO                              ;INICIALIZAÇÃO DO DISPLAY
+00B5   303C           00010         MOVLW   B'00111100'                             ;INICIALIZAÇÃO DO DISPLAY
+00B6   0088           00011         MOVWF   PORTD                                   ;INICIALIZAÇÃO DO DISPLAY
+00B7   2???           00012         CALL    GERA_PULSO                              ;INICIALIZAÇÃO DO DISPLAY
+                      00013 
+00B8   300C           00014         MOVLW   B'00001100'                             ;INICIALIZAÇÃO DO DISPLAY
+00B9   0088           00015         MOVWF   PORTD                                   ;INICIALIZAÇÃO DO DISPLAY
+00BA   2???           00016         CALL    GERA_PULSO                              ;INICIALIZAÇÃO DO DISPLAY
+                      00017         
+00BB   3001           00018         MOVLW   B'00000001'                             ;INICIALIZAÇÃO DO DISPLAY
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 11
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+00BC   0088           00019         MOVWF   PORTD                                   ;INICIALIZAÇÃO DO DISPLAY
+00BD   2???           00020         CALL    GERA_PULSO                              ;INICIALIZAÇÃO DO DISPLAY
+                      00021 
+00BE   3006           00022         MOVLW   B'00000110'                             ;INICIALIZAÇÃO DO DISPLAY
+00BF   0088           00023         MOVWF   PORTD                                   ;INICIALIZAÇÃO DO DISPLAY
+00C0   2???           00024         CALL    GERA_PULSO                              ;INICIALIZAÇÃO DO DISPLAY
+                      00025         
+00C1   14A2           00026         BSF             ESTADO_DISPLAY                  ;SETA A FLAG DE ESTADO A INICIALIZACAO DO DISPLA
+                            Y
+                      00027 
+                      00028         ;ESCREVE NA PRIMEIRA LINHA DO DISPLAY
+00C2   3080           00029         MOVLW   0x80                                    ;P
+00C3   2???           00030         CALL    POSICIONA_DISPLAY
+00C4   3050           00031         MOVLW   'P'
+00C5   2???           00032         CALL    ESCREVE_DISPLAY
+                      00033 
+00C6   3081           00034         MOVLW   0x81                                    ;R
+00C7   2???           00035         CALL    POSICIONA_DISPLAY
+00C8   3052           00036         MOVLW   'R'
+00C9   2???           00037         CALL    ESCREVE_DISPLAY
+                      00038 
+00CA   3082           00039         MOVLW   0x82                                    ;O
+00CB   2???           00040         CALL    POSICIONA_DISPLAY
+00CC   304F           00041         MOVLW   'O'
+00CD   2???           00042         CALL    ESCREVE_DISPLAY
+                      00043 
+00CE   3083           00044         MOVLW   0x83                                    ;J
+00CF   2???           00045         CALL    POSICIONA_DISPLAY
+00D0   304A           00046         MOVLW   'J'
+00D1   2???           00047         CALL    ESCREVE_DISPLAY
+                      00048 
+00D2   3084           00049         MOVLW   0x84                                    ;E
+00D3   2???           00050         CALL    POSICIONA_DISPLAY
+00D4   3045           00051         MOVLW   'E'
+00D5   2???           00052         CALL    ESCREVE_DISPLAY
+                      00053 
+00D6   3085           00054         MOVLW   0x85                                    ;T
+00D7   2???           00055         CALL    POSICIONA_DISPLAY
+00D8   3054           00056         MOVLW   'T'
+00D9   2???           00057         CALL    ESCREVE_DISPLAY
+                      00058         
+00DA   3086           00059         MOVLW   0x86                                    ;O
+00DB   2???           00060         CALL    POSICIONA_DISPLAY
+00DC   304F           00061         MOVLW   'O'
+00DD   2???           00062         CALL    ESCREVE_DISPLAY
+                      00063 
+                      00064 
+00DE   3087           00065         MOVLW   0x87                                    ;ESPAÇO
+00DF   2???           00066         CALL    POSICIONA_DISPLAY
+00E0   3020           00067         MOVLW   ' '
+00E1   2???           00068         CALL    ESCREVE_DISPLAY
+                      00069         
+                      00070 
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 12
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+00E2   3088           00071         MOVLW   0x88                                    ;u
+00E3   2???           00072         CALL    POSICIONA_DISPLAY
+00E4   3075           00073         MOVLW   'u'
+00E5   2???           00074         CALL    ESCREVE_DISPLAY
+                      00075 
+00E6   3089           00076         MOVLW   0x89                                    ;C
+00E7   2???           00077         CALL    POSICIONA_DISPLAY
+00E8   3043           00078         MOVLW   'C'
+00E9   2???           00079         CALL    ESCREVE_DISPLAY
+                      00080 
+                      00081         ;ESCREVE NA SEGUNDA LINHA DO DISPLAY
+00EA   30C0           00082         MOVLW   0xC0                                    ;G
+00EB   2???           00083         CALL    POSICIONA_DISPLAY
+00EC   3047           00084         MOVLW   'G'
+00ED   2???           00085         CALL    ESCREVE_DISPLAY
+                      00086 
+00EE   30C1           00087         MOVLW   0xC1                                    ;A
+00EF   2???           00088         CALL    POSICIONA_DISPLAY
+00F0   3041           00089         MOVLW   'A'
+00F1   2???           00090         CALL    ESCREVE_DISPLAY
+                      00091 
+00F2   30C2           00092         MOVLW   0xC2                                    ;B
+00F3   2???           00093         CALL    POSICIONA_DISPLAY
+00F4   3042           00094         MOVLW   'B'
+00F5   2???           00095         CALL    ESCREVE_DISPLAY
+                      00096         
+00F6   30C3           00097         MOVLW   0xC3                                    ;R
+00F7   2???           00098         CALL    POSICIONA_DISPLAY
+00F8   3052           00099         MOVLW   'R'
+00F9   2???           00100         CALL    ESCREVE_DISPLAY
+                      00101 
+00FA   30C4           00102         MOVLW   0xC4                                    ;I
+00FB   2???           00103         CALL    POSICIONA_DISPLAY
+00FC   3049           00104         MOVLW   'I'
+00FD   2???           00105         CALL    ESCREVE_DISPLAY
+                      00106 
+00FE   30C5           00107         MOVLW   0xC5                                    ;E
+00FF   2???           00108         CALL    POSICIONA_DISPLAY
+0100   3045           00109         MOVLW   'E'
+0101   2???           00110         CALL    ESCREVE_DISPLAY
+                      00111 
+0102   30C6           00112         MOVLW   0xC6                                    ;L
+0103   2???           00113         CALL    POSICIONA_DISPLAY
+0104   304C           00114         MOVLW   'L'
+0105   2???           00115         CALL    ESCREVE_DISPLAY
+                      00116 
+                      00117 
+0106   30C7           00118         MOVLW   0xC7                                    ;ESPAÇO
+0107   2???           00119         CALL    POSICIONA_DISPLAY
+0108   3020           00120         MOVLW   ' '
+0109   2???           00121         CALL    ESCREVE_DISPLAY
+                      00122 
+                      00123 
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 13
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+010A   30C8           00124         MOVLW   0xC8                                    ;M
+010B   2???           00125         CALL    POSICIONA_DISPLAY
+010C   304D           00126         MOVLW   'M'
+010D   2???           00127         CALL    ESCREVE_DISPLAY
+                      00128 
+010E   30C9           00129         MOVLW   0xC9                                    ;A
+010F   2???           00130         CALL    POSICIONA_DISPLAY
+0110   3041           00131         MOVLW   'A'
+0111   2???           00132         CALL    ESCREVE_DISPLAY
+                      00133 
+0112   30CA           00134         MOVLW   0xCA                                    ;T
+0113   2???           00135         CALL    POSICIONA_DISPLAY
+0114   3054           00136         MOVLW   'T'
+0115   2???           00137         CALL    ESCREVE_DISPLAY
+                      00138 
+0116   30CB           00139         MOVLW   0xCB                                    ;I
+0117   2???           00140         CALL    POSICIONA_DISPLAY
+0118   3049           00141         MOVLW   'I'
+0119   2???           00142         CALL    ESCREVE_DISPLAY
+                      00143 
+011A   30CC           00144         MOVLW   0xCC                                    ;A
+011B   2???           00145         CALL    POSICIONA_DISPLAY
+011C   3041           00146         MOVLW   'A'
+011D   2???           00147         CALL    ESCREVE_DISPLAY
+                      00148         
+011E   30CD           00149         MOVLW   0xCD                                    ;S
+011F   2???           00150         CALL    POSICIONA_DISPLAY
+0120   3053           00151         MOVLW   'S'
+0121   2???           00152         CALL    ESCREVE_DISPLAY
+                      00153         
+0122   0008           00154         RETURN                                                  ;RETORNO
+                      00155 
+0123                  00156 CAIXA_LIVRE
+                      00157         
+0123   3001           00158         MOVLW   B'00000001'                             ;LIMPA DISPLAY
+0124   2???           00159         CALL    POSICIONA_DISPLAY
+                      00160 
+                      00161         ;ESCREVE NA PRIMEIRA LINHA DO DISPLAY
+0125   3080           00162         MOVLW   0x80                                    ;A
+0126   2???           00163         CALL    POSICIONA_DISPLAY
+0127   3041           00164         MOVLW   'A'
+0128   2???           00165         CALL    ESCREVE_DISPLAY
+                      00166 
+0129   3081           00167         MOVLW   0x81                                    ;T
+012A   2???           00168         CALL    POSICIONA_DISPLAY
+012B   3054           00169         MOVLW   'T'
+012C   2???           00170         CALL    ESCREVE_DISPLAY
+                      00171 
+012D   3082           00172         MOVLW   0x82                                    ;E
+012E   2???           00173         CALL    POSICIONA_DISPLAY
+012F   3045           00174         MOVLW   'E'
+0130   2???           00175         CALL    ESCREVE_DISPLAY
+                      00176         
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 14
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0131   3083           00177         MOVLW   0x83                                    ;N
+0132   2???           00178         CALL    POSICIONA_DISPLAY
+0133   304E           00179         MOVLW   'N'
+0134   2???           00180         CALL    ESCREVE_DISPLAY
+                      00181         
+0135   3084           00182         MOVLW   0x84                                    ;C
+0136   2???           00183         CALL    POSICIONA_DISPLAY
+0137   3043           00184         MOVLW   'C'
+0138   2???           00185         CALL    ESCREVE_DISPLAY
+                      00186         
+0139   3085           00187         MOVLW   0x85                                    ;A
+013A   2???           00188         CALL    POSICIONA_DISPLAY
+013B   3041           00189         MOVLW   'A'
+013C   2???           00190         CALL    ESCREVE_DISPLAY
+                      00191         
+013D   3086           00192         MOVLW   0x86                                    ;O
+013E   2???           00193         CALL    POSICIONA_DISPLAY
+013F   304F           00194         MOVLW   'O'
+0140   2???           00195         CALL    ESCREVE_DISPLAY
+                      00196 
+                      00197 
+                      00198         ;ESCREVE NA SEGUNDA LINHA DO DISPLAY
+0141   30C0           00199         MOVLW   0xC0                                    ;C
+0142   2???           00200         CALL    POSICIONA_DISPLAY
+0143   3043           00201         MOVLW   'C'
+0144   2???           00202         CALL    ESCREVE_DISPLAY
+                      00203 
+0145   30C1           00204         MOVLW   0xC1                                    ;A
+0146   2???           00205         CALL    POSICIONA_DISPLAY
+0147   3041           00206         MOVLW   'A'
+0148   2???           00207         CALL    ESCREVE_DISPLAY
+                      00208 
+0149   30C2           00209         MOVLW   0xC2                                    ;I
+014A   2???           00210         CALL    POSICIONA_DISPLAY
+014B   3049           00211         MOVLW   'I'
+014C   2???           00212         CALL    ESCREVE_DISPLAY
+                      00213         
+014D   30C3           00214         MOVLW   0xC3                                    ;X
+014E   2???           00215         CALL    POSICIONA_DISPLAY
+014F   3058           00216         MOVLW   'X'
+0150   2???           00217         CALL    ESCREVE_DISPLAY
+                      00218 
+0151   30C4           00219         MOVLW   0xC4                                    ;A
+0152   2???           00220         CALL    POSICIONA_DISPLAY
+0153   3041           00221         MOVLW   'A'
+0154   2???           00222         CALL    ESCREVE_DISPLAY
+                      00223 
+                      00224 
+0155   30C5           00225         MOVLW   0xC5                                    ;ESPAÇO
+0156   2???           00226         CALL    POSICIONA_DISPLAY
+0157   3020           00227         MOVLW   ' '
+0158   2???           00228         CALL    ESCREVE_DISPLAY
+                      00229 
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 15
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00230 
+0159   30C6           00231         MOVLW   0xC6                                    ;ESCREVE O VALOR DO CAIXA
+015A   2???           00232         CALL    POSICIONA_DISPLAY
+015B   0845           00233         MOVF    CAIXA,W
+015C   2???           00234         CALL    ESCREVE_DISPLAY
+                      00235 
+                      00236 
+015D   30C7           00237         MOVLW   0xC7                                    ;ESPAÇO
+015E   2???           00238         CALL    POSICIONA_DISPLAY
+015F   3020           00239         MOVLW   ' '
+0160   2???           00240         CALL    ESCREVE_DISPLAY
+                      00241 
+                      00242 
+0161   30C8           00243         MOVLW   0xC8                                    ;L
+0162   2???           00244         CALL    POSICIONA_DISPLAY
+0163   304C           00245         MOVLW   'L'
+0164   2???           00246         CALL    ESCREVE_DISPLAY
+                      00247 
+0165   30C9           00248         MOVLW   0xC9                                    ;I
+0166   2???           00249         CALL    POSICIONA_DISPLAY
+0167   3049           00250         MOVLW   'I'
+0168   2???           00251         CALL    ESCREVE_DISPLAY
+                      00252 
+0169   30CA           00253         MOVLW   0xCA                                    ;V
+016A   2???           00254         CALL    POSICIONA_DISPLAY
+016B   3056           00255         MOVLW   'V'
+016C   2???           00256         CALL    ESCREVE_DISPLAY
+                      00257 
+016D   30CB           00258         MOVLW   0xCB                                    ;R
+016E   2???           00259         CALL    POSICIONA_DISPLAY
+016F   3052           00260         MOVLW   'R'
+0170   2???           00261         CALL    ESCREVE_DISPLAY
+                      00262 
+0171   30CC           00263         MOVLW   0xCC                                    ;E
+0172   2???           00264         CALL    POSICIONA_DISPLAY
+0173   3045           00265         MOVLW   'E'
+0174   2???           00266         CALL    ESCREVE_DISPLAY
+                      00267 
+0175   0008           00268         RETURN                                                  ;RETORNA
+                      00269 
+0176                  00270 CAIXA_FIM
+                      00271         
+0176   3001           00272         MOVLW   B'00000001'                             ;LIMPA DISPLAY
+0177   2???           00273         CALL    POSICIONA_DISPLAY
+                      00274 
+                      00275         ;ESCREVE NA PRIMEIRA LINHA DO DISPLAY
+0178   3080           00276         MOVLW   0x80                                    ;C
+0179   2???           00277         CALL    POSICIONA_DISPLAY
+017A   3043           00278         MOVLW   'C'
+017B   2???           00279         CALL    ESCREVE_DISPLAY
+                      00280 
+017C   3081           00281         MOVLW   0x81                                    ;A
+017D   2???           00282         CALL    POSICIONA_DISPLAY
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 16
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+017E   3041           00283         MOVLW   'A'
+017F   2???           00284         CALL    ESCREVE_DISPLAY
+                      00285 
+0180   3082           00286         MOVLW   0x82                                    ;I
+0181   2???           00287         CALL    POSICIONA_DISPLAY
+0182   3049           00288         MOVLW   'I'
+0183   2???           00289         CALL    ESCREVE_DISPLAY
+                      00290         
+0184   3083           00291         MOVLW   0x83                                    ;X
+0185   2???           00292         CALL    POSICIONA_DISPLAY
+0186   3058           00293         MOVLW   'X'
+0187   2???           00294         CALL    ESCREVE_DISPLAY
+                      00295         
+0188   3084           00296         MOVLW   0x84                                    ;A
+0189   2???           00297         CALL    POSICIONA_DISPLAY
+018A   3041           00298         MOVLW   'A'
+018B   2???           00299         CALL    ESCREVE_DISPLAY
+                      00300         
+                      00301 
+018C   3085           00302         MOVLW   0x85                                    ;ESPAÇO
+018D   2???           00303         CALL    POSICIONA_DISPLAY
+018E   3020           00304         MOVLW   ' '
+018F   2???           00305         CALL    ESCREVE_DISPLAY
+                      00306         
+                      00307 
+0190   3086           00308         MOVLW   0x86                                    ;ESCREVE O VALOR DO CAIXA NO DISPLAY
+0191   2???           00309         CALL    POSICIONA_DISPLAY
+0192   0845           00310         MOVF    CAIXA,W
+0193   2???           00311         CALL    ESCREVE_DISPLAY
+                      00312 
+                      00313 
+                      00314         ;ESCREVE NA SEGUNDA LINHA DO DISPLAY
+0194   30C0           00315         MOVLW   0xC0                                    ;F
+0195   2???           00316         CALL    POSICIONA_DISPLAY
+0196   3046           00317         MOVLW   'F'
+0197   2???           00318         CALL    ESCREVE_DISPLAY
+                      00319 
+0198   30C1           00320         MOVLW   0xC1                                    ;I
+0199   2???           00321         CALL    POSICIONA_DISPLAY
+019A   3049           00322         MOVLW   'I'
+019B   2???           00323         CALL    ESCREVE_DISPLAY
+                      00324 
+019C   30C2           00325         MOVLW   0xC2                                    ;N
+019D   2???           00326         CALL    POSICIONA_DISPLAY
+019E   304E           00327         MOVLW   'N'
+019F   2???           00328         CALL    ESCREVE_DISPLAY
+                      00329         
+01A0   30C3           00330         MOVLW   0xC3                                    ;A
+01A1   2???           00331         CALL    POSICIONA_DISPLAY
+01A2   3041           00332         MOVLW   'A'
+01A3   2???           00333         CALL    ESCREVE_DISPLAY
+                      00334 
+01A4   30C4           00335         MOVLW   0xC4                                    ;L
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 17
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+01A5   2???           00336         CALL    POSICIONA_DISPLAY
+01A6   304C           00337         MOVLW   'L'
+01A7   2???           00338         CALL    ESCREVE_DISPLAY
+                      00339 
+01A8   30C5           00340         MOVLW   0xC5                                    ;I
+01A9   2???           00341         CALL    POSICIONA_DISPLAY
+01AA   3049           00342         MOVLW   'I'
+01AB   2???           00343         CALL    ESCREVE_DISPLAY
+                      00344 
+01AC   30C6           00345         MOVLW   0xC6                                    ;Z
+01AD   2???           00346         CALL    POSICIONA_DISPLAY
+01AE   305A           00347         MOVLW   'Z'
+01AF   2???           00348         CALL    ESCREVE_DISPLAY
+                      00349 
+01B0   30C7           00350         MOVLW   0xC7                                    ;A
+01B1   2???           00351         CALL    POSICIONA_DISPLAY
+01B2   3041           00352         MOVLW   'A'
+01B3   2???           00353         CALL    ESCREVE_DISPLAY
+                      00354 
+01B4   30C8           00355         MOVLW   0xC8                                    ;D
+01B5   2???           00356         CALL    POSICIONA_DISPLAY
+01B6   3044           00357         MOVLW   'D'
+01B7   2???           00358         CALL    ESCREVE_DISPLAY
+                      00359 
+01B8   30C9           00360         MOVLW   0xC9                                    ;O
+01B9   2???           00361         CALL    POSICIONA_DISPLAY
+01BA   304F           00362         MOVLW   'O'
+01BB   2???           00363         CALL    ESCREVE_DISPLAY
+                      00364 
+01BC   0008           00365         RETURN                                                  ;RETORNA
+                      00366 
+01BD                  00367 MOSTRAR_CONTADOR
+                      00368         
+01BD   3001           00369         MOVLW   B'00000001'                             ;LIMPA DISPLAY
+01BE   2???           00370         CALL    POSICIONA_DISPLAY
+                      00371 
+                      00372         ;ESCREVE NA PRIMEIRA LINHA DO DISPLAY
+01BF   3080           00373         MOVLW   0x80                                    ;A
+01C0   2???           00374         CALL    POSICIONA_DISPLAY               
+01C1   3041           00375         MOVLW   'A'
+01C2   2???           00376         CALL    ESCREVE_DISPLAY
+                      00377 
+01C3   3081           00378         MOVLW   0x81                                    ;T
+01C4   2???           00379         CALL    POSICIONA_DISPLAY               
+01C5   3054           00380         MOVLW   'T'
+01C6   2???           00381         CALL    ESCREVE_DISPLAY
+                      00382 
+01C7   3082           00383         MOVLW   0x82                                    ;E
+01C8   2???           00384         CALL    POSICIONA_DISPLAY
+01C9   3045           00385         MOVLW   'E'
+01CA   2???           00386         CALL    ESCREVE_DISPLAY
+                      00387         
+01CB   3083           00388         MOVLW   0x83                                    ;N
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 18
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+01CC   2???           00389         CALL    POSICIONA_DISPLAY
+01CD   304E           00390         MOVLW   'N'
+01CE   2???           00391         CALL    ESCREVE_DISPLAY
+                      00392         
+01CF   3084           00393         MOVLW   0x84                                    ;D
+01D0   2???           00394         CALL    POSICIONA_DISPLAY
+01D1   3044           00395         MOVLW   'D'
+01D2   2???           00396         CALL    ESCREVE_DISPLAY
+                      00397         
+01D3   3085           00398         MOVLW   0x85                                    ;I
+01D4   2???           00399         CALL    POSICIONA_DISPLAY
+01D5   3049           00400         MOVLW   'I'
+01D6   2???           00401         CALL    ESCREVE_DISPLAY
+                      00402         
+01D7   3086           00403         MOVLW   0x86                                    ;M
+01D8   2???           00404         CALL    POSICIONA_DISPLAY
+01D9   304D           00405         MOVLW   'M'
+01DA   2???           00406         CALL    ESCREVE_DISPLAY
+                      00407 
+01DB   3087           00408         MOVLW   0x87                                    ;E
+01DC   2???           00409         CALL    POSICIONA_DISPLAY
+01DD   3045           00410         MOVLW   'E'
+01DE   2???           00411         CALL    ESCREVE_DISPLAY
+                      00412 
+01DF   3088           00413         MOVLW   0x88                                    ;N
+01E0   2???           00414         CALL    POSICIONA_DISPLAY
+01E1   304E           00415         MOVLW   'N'
+01E2   2???           00416         CALL    ESCREVE_DISPLAY
+                      00417 
+01E3   3089           00418         MOVLW   0x89                                    ;T
+01E4   2???           00419         CALL    POSICIONA_DISPLAY
+01E5   3054           00420         MOVLW   'T'
+01E6   2???           00421         CALL    ESCREVE_DISPLAY
+                      00422 
+01E7   308A           00423         MOVLW   0x8A                                    ;O
+01E8   2???           00424         CALL    POSICIONA_DISPLAY
+01E9   304F           00425         MOVLW   'O'
+01EA   2???           00426         CALL    ESCREVE_DISPLAY
+                      00427 
+01EB   308B           00428         MOVLW   0x8B                                    ;S
+01EC   2???           00429         CALL    POSICIONA_DISPLAY
+01ED   3053           00430         MOVLW   'S'
+01EE   2???           00431         CALL    ESCREVE_DISPLAY
+                      00432 
+01EF   308C           00433         MOVLW   0x8C                                    ;:
+01F0   2???           00434         CALL    POSICIONA_DISPLAY
+01F1   303A           00435         MOVLW   ':'
+01F2   2???           00436         CALL    ESCREVE_DISPLAY
+                      00437 
+                      00438 
+                      00439         ;ESCREVE NA SEGUNDA LINHA DO DISPLAY
+01F3   30C0           00440         MOVLW   0xC0                                    ;ESCREVE O VALOR DA VARIAVEL DIGITO1
+01F4   2???           00441         CALL    POSICIONA_DISPLAY
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 19
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+01F5   0848           00442         MOVF    DIGITO1,W
+01F6   2???           00443         CALL    ESCREVE_DISPLAY
+                      00444 
+01F7   30C1           00445         MOVLW   0xC1                                    ;ESCREVE O VALOR DA VARIAVEL DIGITO2
+01F8   2???           00446         CALL    POSICIONA_DISPLAY
+01F9   0849           00447         MOVF    DIGITO2,W
+01FA   2???           00448         CALL    ESCREVE_DISPLAY
+                      00449 
+01FB   30C2           00450         MOVLW   0xC2                                    ;ESCREVE O VALOR DA VARIAVEL DIGITO3
+01FC   2???           00451         CALL    POSICIONA_DISPLAY
+01FD   084A           00452         MOVF    DIGITO3,W
+01FE   2???           00453         CALL    ESCREVE_DISPLAY
+                      00454         
+                      00455 
+01FF   30C3           00456         MOVLW   0xC3                                    ;ESPAÇO
+0200   2???           00457         CALL    POSICIONA_DISPLAY
+0201   3020           00458         MOVLW   ' '
+0202   2???           00459         CALL    ESCREVE_DISPLAY
+                      00460 
+                      00461 
+0203   30C4           00462         MOVLW   0xC4                                    ;P
+0204   2???           00463         CALL    POSICIONA_DISPLAY
+0205   3050           00464         MOVLW   'P'
+0206   2???           00465         CALL    ESCREVE_DISPLAY
+                      00466 
+0207   30C5           00467         MOVLW   0xC5                                    ;E
+0208   2???           00468         CALL    POSICIONA_DISPLAY
+0209   3045           00469         MOVLW   'E'
+020A   2???           00470         CALL    ESCREVE_DISPLAY
+                      00471 
+020B   30C6           00472         MOVLW   0xC6                                    ;S
+020C   2???           00473         CALL    POSICIONA_DISPLAY
+020D   3053           00474         MOVLW   'S'
+020E   2???           00475         CALL    ESCREVE_DISPLAY
+                      00476 
+020F   30C7           00477         MOVLW   0xC7                                    ;S
+0210   2???           00478         CALL    POSICIONA_DISPLAY
+0211   3053           00479         MOVLW   'S'
+0212   2???           00480         CALL    ESCREVE_DISPLAY
+                      00481 
+0213   30C8           00482         MOVLW   0xC8                                    ;O
+0214   2???           00483         CALL    POSICIONA_DISPLAY
+0215   304F           00484         MOVLW   'O'
+0216   2???           00485         CALL    ESCREVE_DISPLAY
+                      00486 
+0217   30C9           00487         MOVLW   0xC9                                    ;A
+0218   2???           00488         CALL    POSICIONA_DISPLAY
+0219   3041           00489         MOVLW   'A'
+021A   2???           00490         CALL    ESCREVE_DISPLAY
+                      00491 
+021B   30CA           00492         MOVLW   0xCA                                    ;S
+021C   2???           00493         CALL    POSICIONA_DISPLAY
+021D   3053           00494         MOVLW   'S'
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 20
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+021E   2???           00495         CALL    ESCREVE_DISPLAY
+                      00496 
+021F   0008           00497         RETURN                                                  ;RETORNA
+                      00498 
+                      00499 
+0220                  00500 MOSTRAR_ENDERECO
+                      00501 
+0220   3001           00502         MOVLW   B'00000001'                             ;LIMPA DISPLAY
+0221   2???           00503         CALL    POSICIONA_DISPLAY
+                      00504 
+                      00505         ;ESCREVE NA PRIMEIRA LINHA DO DISPLAY
+0222   3080           00506         MOVLW   0x80                                    ;E
+0223   2???           00507         CALL    POSICIONA_DISPLAY               
+0224   3045           00508         MOVLW   'E'
+0225   2???           00509         CALL    ESCREVE_DISPLAY
+                      00510 
+0226   3081           00511         MOVLW   0x81                                    ;N
+0227   2???           00512         CALL    POSICIONA_DISPLAY               
+0228   304E           00513         MOVLW   'N'
+0229   2???           00514         CALL    ESCREVE_DISPLAY
+                      00515 
+022A   3082           00516         MOVLW   0x82                                    ;D
+022B   2???           00517         CALL    POSICIONA_DISPLAY
+022C   3044           00518         MOVLW   'D'
+022D   2???           00519         CALL    ESCREVE_DISPLAY
+                      00520         
+022E   3083           00521         MOVLW   0x83                                    ;E
+022F   2???           00522         CALL    POSICIONA_DISPLAY
+0230   3045           00523         MOVLW   'E'
+0231   2???           00524         CALL    ESCREVE_DISPLAY
+                      00525         
+0232   3084           00526         MOVLW   0x84                                    ;R
+0233   2???           00527         CALL    POSICIONA_DISPLAY
+0234   3052           00528         MOVLW   'R'
+0235   2???           00529         CALL    ESCREVE_DISPLAY
+                      00530         
+0236   3085           00531         MOVLW   0x85                                    ;E
+0237   2???           00532         CALL    POSICIONA_DISPLAY
+0238   3045           00533         MOVLW   'E'
+0239   2???           00534         CALL    ESCREVE_DISPLAY
+                      00535         
+023A   3086           00536         MOVLW   0x86                                    ;Ç
+023B   2???           00537         CALL    POSICIONA_DISPLAY
+023C   3043           00538         MOVLW   'C'
+023D   2???           00539         CALL    ESCREVE_DISPLAY
+                      00540 
+023E   3087           00541         MOVLW   0x87                                    ;O
+023F   2???           00542         CALL    POSICIONA_DISPLAY
+0240   304F           00543         MOVLW   'O'
+0241   2???           00544         CALL    ESCREVE_DISPLAY
+                      00545 
+0242   3088           00546         MOVLW   0x88                                    ;:
+0243   2???           00547         CALL    POSICIONA_DISPLAY
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 21
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0244   303A           00548         MOVLW   ':'
+0245   2???           00549         CALL    ESCREVE_DISPLAY
+                      00550 
+0246   3089           00551         MOVLW   0x89                                    ;0
+0247   2???           00552         CALL    POSICIONA_DISPLAY
+0248   3030           00553         MOVLW   '0'
+0249   2???           00554         CALL    ESCREVE_DISPLAY
+                      00555 
+024A   308A           00556         MOVLW   0x8A                                    ;x
+024B   2???           00557         CALL    POSICIONA_DISPLAY
+024C   3078           00558         MOVLW   'x'
+024D   2???           00559         CALL    ESCREVE_DISPLAY
+                      00560 
+024E   084C           00561         MOVF    ENDERECO,W                              ;MOVE O VALOR DE DADO PARA W
+024F   00CD           00562         MOVWF   DIGEND1                                 ;COPIA W PARA A VARIAVEL
+0250   00CE           00563         MOVWF   DIGEND2                                 ;COPIA W PARA A VARIAVEL
+                      00564         
+0251   30F0           00565         MOVLW   0xF0                                    ;MOVE 0xF0 PARA W
+0252   05CD           00566         ANDWF   DIGEND1,F                               ;REALIZA A OPERACAO AND ENTRE W E DIGEND1
+0253   0ECD           00567         SWAPF   DIGEND1,F                               ;INVERTE OS NIBBLES DA VARIAVEL DIGEND1
+                      00568         
+0254   300F           00569         MOVLW   0x0F                                    ;MOVE 0x0F PARA W
+0255   05CE           00570         ANDWF   DIGEND2,F                               ;REALIZA A OPERACAO AND ENTRE W E DIGEND2
+                      00571 
+0256   3030           00572         MOVLW   0x30                                    ;MOVE ESSE VALOR PARA W P/ ESCRITA NA ASCII
+0257   07CD           00573         ADDWF   DIGEND1,F                               ;ADICIONA W EM DIGEND1
+0258   07CE           00574         ADDWF   DIGEND2,F                               ;ADICIONA W EM DIGEND2
+                      00575 
+0259   308B           00576         MOVLW   0x8B                                    ;PASSA ESSE VALOR PARA W
+025A   2???           00577         CALL    POSICIONA_DISPLAY               ;MOVE O CURSOR DO DISPLAY PARA ESSA POSICAO
+025B   084D           00578         MOVF    DIGEND1,W                               ;COPIA O VALOR DE DIGDADO1 PARA W
+025C   2???           00579         CALL    ESCREVE_DISPLAY                 ;ESCREVE O VALOR NO DISPLAY
+                      00580         
+025D   308C           00581         MOVLW   0x8C
+025E   2???           00582         CALL    POSICIONA_DISPLAY               ;MOVE O CURSOR DO DISPLAY PARA ESSA POSICAO
+025F   084E           00583         MOVF    DIGEND2,W
+0260   2???           00584         CALL    ESCREVE_DISPLAY                 ;ESCREVE O VALOR NO DISPLAY
+                      00585 
+                      00586 
+                      00587         ;ESCREVE NA SEGUNDA LINHA DO DISPLAY
+0261   30C0           00588         MOVLW   0xC0                                    ;S
+0262   2???           00589         CALL    POSICIONA_DISPLAY
+0263   3053           00590         MOVLW   'S'     
+0264   2???           00591         CALL    ESCREVE_DISPLAY
+                      00592 
+0265   30C1           00593         MOVLW   0xC1                                    ;A
+0266   2???           00594         CALL    POSICIONA_DISPLAY
+0267   3041           00595         MOVLW   'A'
+0268   2???           00596         CALL    ESCREVE_DISPLAY
+                      00597 
+0269   30C2           00598         MOVLW   0xC2                                    ;L
+026A   2???           00599         CALL    POSICIONA_DISPLAY
+026B   304C           00600         MOVLW   'L'
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 22
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+026C   2???           00601         CALL    ESCREVE_DISPLAY
+                      00602         
+026D   30C3           00603         MOVLW   0xC3                                    ;V
+026E   2???           00604         CALL    POSICIONA_DISPLAY
+026F   3056           00605         MOVLW   'V'
+0270   2???           00606         CALL    ESCREVE_DISPLAY
+                      00607 
+0271   30C4           00608         MOVLW   0xC4                                    ;A
+0272   2???           00609         CALL    POSICIONA_DISPLAY
+0273   3041           00610         MOVLW   'A'
+0274   2???           00611         CALL    ESCREVE_DISPLAY
+                      00612 
+0275   30C5           00613         MOVLW   0xC5                                    ;R
+0276   2???           00614         CALL    POSICIONA_DISPLAY
+0277   3052           00615         MOVLW   'R'
+0278   2???           00616         CALL    ESCREVE_DISPLAY
+                      00617 
+                      00618 
+0279   30C6           00619         MOVLW   0xC6                                    ;ESPAÇO
+027A   2???           00620         CALL    POSICIONA_DISPLAY
+027B   3020           00621         MOVLW   ' '
+027C   2???           00622         CALL    ESCREVE_DISPLAY
+                      00623 
+                      00624 
+027D   30C7           00625         MOVLW   0xC7                                    ;O
+027E   2???           00626         CALL    POSICIONA_DISPLAY
+027F   304F           00627         MOVLW   'O'
+0280   2???           00628         CALL    ESCREVE_DISPLAY
+                      00629 
+0281   30C8           00630         MOVLW   0xC8                                    ;U
+0282   2???           00631         CALL    POSICIONA_DISPLAY
+0283   3055           00632         MOVLW   'U'
+0284   2???           00633         CALL    ESCREVE_DISPLAY
+                      00634 
+                      00635 
+0285   30C9           00636         MOVLW   0xC9                                    ;ESPAÇO
+0286   2???           00637         CALL    POSICIONA_DISPLAY
+0287   3020           00638         MOVLW   ' '
+0288   2???           00639         CALL    ESCREVE_DISPLAY
+                      00640 
+                      00641 
+0289   30CA           00642         MOVLW   0xCA                                    ;L
+028A   2???           00643         CALL    POSICIONA_DISPLAY
+028B   304C           00644         MOVLW   'L'
+028C   2???           00645         CALL    ESCREVE_DISPLAY
+                      00646 
+028D   30CB           00647         MOVLW   0xCB                                    ;E
+028E   2???           00648         CALL    POSICIONA_DISPLAY
+028F   3045           00649         MOVLW   'E'
+0290   2???           00650         CALL    ESCREVE_DISPLAY
+                      00651         
+0291   30CC           00652         MOVLW   0xCC                                    ;R
+0292   2???           00653         CALL    POSICIONA_DISPLAY
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 23
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0293   3052           00654         MOVLW   'R'
+0294   2???           00655         CALL    ESCREVE_DISPLAY
+                      00656 
+0295   30CD           00657         MOVLW   0xCD                                    ;?
+0296   2???           00658         CALL    POSICIONA_DISPLAY
+0297   303F           00659         MOVLW   '?'
+0298   2???           00660         CALL    ESCREVE_DISPLAY
+                      00661 
+0299   0008           00662         RETURN                                                  ;RETORNA
+                      00663 
+029A                  00664 FIM_ESCRITA
+                      00665 
+029A   3001           00666         MOVLW   B'00000001'                             ;LIMPA DISPLAY
+029B   2???           00667         CALL    POSICIONA_DISPLAY
+                      00668 
+                      00669         ;ESCREVE NA PRIMEIRA LINHA DO DISPLAY
+029C   3080           00670         MOVLW   0x80                                    ;S
+029D   2???           00671         CALL    POSICIONA_DISPLAY               
+029E   3053           00672         MOVLW   'S'
+029F   2???           00673         CALL    ESCREVE_DISPLAY
+                      00674 
+02A0   3081           00675         MOVLW   0x81                                    ;A
+02A1   2???           00676         CALL    POSICIONA_DISPLAY               
+02A2   3041           00677         MOVLW   'A'
+02A3   2???           00678         CALL    ESCREVE_DISPLAY
+                      00679 
+02A4   3082           00680         MOVLW   0x82                                    ;L
+02A5   2???           00681         CALL    POSICIONA_DISPLAY
+02A6   304C           00682         MOVLW   'L'
+02A7   2???           00683         CALL    ESCREVE_DISPLAY
+                      00684         
+02A8   3083           00685         MOVLW   0x83                                    ;V
+02A9   2???           00686         CALL    POSICIONA_DISPLAY
+02AA   3056           00687         MOVLW   'V'
+02AB   2???           00688         CALL    ESCREVE_DISPLAY
+                      00689         
+02AC   3084           00690         MOVLW   0x84                                    ;O
+02AD   2???           00691         CALL    POSICIONA_DISPLAY
+02AE   304F           00692         MOVLW   'O'
+02AF   2???           00693         CALL    ESCREVE_DISPLAY
+                      00694 
+02B0   3085           00695         MOVLW   0x85                                    ;!
+02B1   2???           00696         CALL    POSICIONA_DISPLAY
+02B2   3021           00697         MOVLW   '!'
+02B3   2???           00698         CALL    ESCREVE_DISPLAY
+                      00699 
+02B4   0008           00700         RETURN                                                  ;RETORNA
+                      00701 
+02B5                  00702 MOSTRAR_V33
+                      00703         
+02B5   3001           00704         MOVLW   B'00000001'                             ;LIMPA DISPLAY
+02B6   2???           00705         CALL    POSICIONA_DISPLAY
+                      00706 
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 24
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00707         ;ESCREVE NA PRIMEIRA LINHA DO DISPLAY
+02B7   3080           00708         MOVLW   0x80                                    ;M
+02B8   2???           00709         CALL    POSICIONA_DISPLAY               
+02B9   304D           00710         MOVLW   'M'
+02BA   2???           00711         CALL    ESCREVE_DISPLAY
+                      00712 
+02BB   3081           00713         MOVLW   0x81                                    ;O
+02BC   2???           00714         CALL    POSICIONA_DISPLAY               
+02BD   304F           00715         MOVLW   'O'
+02BE   2???           00716         CALL    ESCREVE_DISPLAY
+                      00717 
+02BF   3082           00718         MOVLW   0x82                                    ;T
+02C0   2???           00719         CALL    POSICIONA_DISPLAY
+02C1   3054           00720         MOVLW   'T'
+02C2   2???           00721         CALL    ESCREVE_DISPLAY
+                      00722         
+02C3   3083           00723         MOVLW   0x83                                    ;O
+02C4   2???           00724         CALL    POSICIONA_DISPLAY
+02C5   304F           00725         MOVLW   'O'
+02C6   2???           00726         CALL    ESCREVE_DISPLAY
+                      00727         
+02C7   3084           00728         MOVLW   0x84                                    ;R
+02C8   2???           00729         CALL    POSICIONA_DISPLAY
+02C9   3052           00730         MOVLW   'R'
+02CA   2???           00731         CALL    ESCREVE_DISPLAY
+                      00732         
+                      00733 
+02CB   3085           00734         MOVLW   0x85                                    ;ESPAÇO
+02CC   2???           00735         CALL    POSICIONA_DISPLAY
+02CD   3020           00736         MOVLW   ' '
+02CE   2???           00737         CALL    ESCREVE_DISPLAY
+                      00738 
+                      00739         
+02CF   3086           00740         MOVLW   0x86                                    ;E
+02D0   2???           00741         CALL    POSICIONA_DISPLAY
+02D1   3045           00742         MOVLW   'E'
+02D2   2???           00743         CALL    ESCREVE_DISPLAY
+                      00744 
+02D3   3087           00745         MOVLW   0x87                                    ;M
+02D4   2???           00746         CALL    POSICIONA_DISPLAY
+02D5   304D           00747         MOVLW   'M'
+02D6   2???           00748         CALL    ESCREVE_DISPLAY
+                      00749 
+                      00750 
+02D7   3088           00751         MOVLW   0x88                                    ;ESPAÇO
+02D8   2???           00752         CALL    POSICIONA_DISPLAY
+02D9   3020           00753         MOVLW   ' '
+02DA   2???           00754         CALL    ESCREVE_DISPLAY
+                      00755 
+                      00756 
+02DB   3089           00757         MOVLW   0x89                                    ;3
+02DC   2???           00758         CALL    POSICIONA_DISPLAY
+02DD   3033           00759         MOVLW   '3'
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 25
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+02DE   2???           00760         CALL    ESCREVE_DISPLAY
+                      00761 
+02DF   308A           00762         MOVLW   0x8A                                    ;3
+02E0   2???           00763         CALL    POSICIONA_DISPLAY
+02E1   3033           00764         MOVLW   '3'
+02E2   2???           00765         CALL    ESCREVE_DISPLAY
+                      00766 
+02E3   308B           00767         MOVLW   0x8B                                    ;%
+02E4   2???           00768         CALL    POSICIONA_DISPLAY
+02E5   3025           00769         MOVLW   '%'
+02E6   2???           00770         CALL    ESCREVE_DISPLAY
+                      00771 
+02E7   0008           00772         RETURN                                                  ;RETORNA
+                      00773 
+02E8                  00774 MOSTRAR_V100
+                      00775         
+02E8   3001           00776         MOVLW   B'00000001'                             ;LIMPA DISPLAY
+02E9   2???           00777         CALL    POSICIONA_DISPLAY
+                      00778 
+                      00779         ;ESCREVE NA PRIMEIRA LINHA DO DISPLAY
+02EA   3080           00780         MOVLW   0x80                                    ;M
+02EB   2???           00781         CALL    POSICIONA_DISPLAY               
+02EC   304D           00782         MOVLW   'M'
+02ED   2???           00783         CALL    ESCREVE_DISPLAY
+                      00784 
+02EE   3081           00785         MOVLW   0x81                                    ;O
+02EF   2???           00786         CALL    POSICIONA_DISPLAY               
+02F0   304F           00787         MOVLW   'O'
+02F1   2???           00788         CALL    ESCREVE_DISPLAY
+                      00789 
+02F2   3082           00790         MOVLW   0x82                                    ;T
+02F3   2???           00791         CALL    POSICIONA_DISPLAY
+02F4   3054           00792         MOVLW   'T'
+02F5   2???           00793         CALL    ESCREVE_DISPLAY
+                      00794         
+02F6   3083           00795         MOVLW   0x83                                    ;O
+02F7   2???           00796         CALL    POSICIONA_DISPLAY
+02F8   304F           00797         MOVLW   'O'
+02F9   2???           00798         CALL    ESCREVE_DISPLAY
+                      00799         
+02FA   3084           00800         MOVLW   0x84                                    ;R
+02FB   2???           00801         CALL    POSICIONA_DISPLAY
+02FC   3052           00802         MOVLW   'R'
+02FD   2???           00803         CALL    ESCREVE_DISPLAY
+                      00804         
+                      00805 
+02FE   3085           00806         MOVLW   0x85                                    ;ESPAÇO
+02FF   2???           00807         CALL    POSICIONA_DISPLAY
+0300   3020           00808         MOVLW   ' '
+0301   2???           00809         CALL    ESCREVE_DISPLAY
+                      00810 
+                      00811         
+0302   3086           00812         MOVLW   0x86                                    ;E
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 26
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0303   2???           00813         CALL    POSICIONA_DISPLAY
+0304   3045           00814         MOVLW   'E'
+0305   2???           00815         CALL    ESCREVE_DISPLAY
+                      00816 
+0306   3087           00817         MOVLW   0x87                                    ;M
+0307   2???           00818         CALL    POSICIONA_DISPLAY
+0308   304D           00819         MOVLW   'M'
+0309   2???           00820         CALL    ESCREVE_DISPLAY
+                      00821 
+                      00822 
+030A   3088           00823         MOVLW   0x88                                    ;ESPAÇO
+030B   2???           00824         CALL    POSICIONA_DISPLAY
+030C   3020           00825         MOVLW   ' '
+030D   2???           00826         CALL    ESCREVE_DISPLAY
+                      00827 
+                      00828 
+030E   3089           00829         MOVLW   0x89                                    ;1
+030F   2???           00830         CALL    POSICIONA_DISPLAY
+0310   3031           00831         MOVLW   '1'
+0311   2???           00832         CALL    ESCREVE_DISPLAY
+                      00833 
+0312   308A           00834         MOVLW   0x8A                                    ;0
+0313   2???           00835         CALL    POSICIONA_DISPLAY
+0314   3030           00836         MOVLW   '0'
+0315   2???           00837         CALL    ESCREVE_DISPLAY
+                      00838 
+0316   308B           00839         MOVLW   0x8B                                    ;0
+0317   2???           00840         CALL    POSICIONA_DISPLAY
+0318   3030           00841         MOVLW   '0'
+0319   2???           00842         CALL    ESCREVE_DISPLAY
+                      00843 
+031A   308C           00844         MOVLW   0x8C                                    ;%
+031B   2???           00845         CALL    POSICIONA_DISPLAY
+031C   3025           00846         MOVLW   '%'
+031D   2???           00847         CALL    ESCREVE_DISPLAY
+                      00848 
+031E   0008           00849         RETURN                                                  ;RETORNA
+                      00850 
+031F                  00851 MOSTRAR_MEDIA_3CASAS
+                      00852         
+031F   3001           00853         MOVLW   B'00000001'                             ;LIMPA DISPLAY
+0320   2???           00854         CALL    POSICIONA_DISPLAY
+0321   1722           00855         BSF             FIM_MEDIA                               ;SETA A FLAG FIM_MEDIA
+                      00856 
+                      00857         ;ESCREVE NA PRIMEIRA LINHA DO DISPLAY
+0322   3080           00858         MOVLW   0x80                                    ;M
+0323   2???           00859         CALL    POSICIONA_DISPLAY               
+0324   304D           00860         MOVLW   'M'
+0325   2???           00861         CALL    ESCREVE_DISPLAY
+                      00862 
+0326   3081           00863         MOVLW   0x81                                    ;E
+0327   2???           00864         CALL    POSICIONA_DISPLAY               
+0328   3045           00865         MOVLW   'E'
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 27
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0329   2???           00866         CALL    ESCREVE_DISPLAY
+                      00867 
+032A   3082           00868         MOVLW   0x82                                    ;D
+032B   2???           00869         CALL    POSICIONA_DISPLAY
+032C   3044           00870         MOVLW   'D'
+032D   2???           00871         CALL    ESCREVE_DISPLAY
+                      00872         
+032E   3083           00873         MOVLW   0x83                                    ;I
+032F   2???           00874         CALL    POSICIONA_DISPLAY
+0330   3049           00875         MOVLW   'I'
+0331   2???           00876         CALL    ESCREVE_DISPLAY
+                      00877         
+0332   3084           00878         MOVLW   0x84                                    ;A
+0333   2???           00879         CALL    POSICIONA_DISPLAY
+0334   3041           00880         MOVLW   'A'
+0335   2???           00881         CALL    ESCREVE_DISPLAY
+                      00882         
+0336   3085           00883         MOVLW   0x85                                    ;:
+0337   2???           00884         CALL    POSICIONA_DISPLAY
+0338   303A           00885         MOVLW   ':'
+0339   2???           00886         CALL    ESCREVE_DISPLAY
+                      00887 
+                      00888         
+033A   3086           00889         MOVLW   0x86                                    ;ESCREVE O VALOR DA VARIAVEL DIGITO1
+033B   2???           00890         CALL    POSICIONA_DISPLAY
+033C   3030           00891         MOVLW   0x30                    
+033D   07C8           00892         ADDWF   DIGITO1,F                               ;DEIXA EM ASCII
+033E   0848           00893         MOVF    DIGITO1,W
+033F   2???           00894         CALL    ESCREVE_DISPLAY
+                      00895 
+0340   3087           00896         MOVLW   0x87                                    ;ESCREVE O VALOR DA VARIAVEL DIGITO2
+0341   2???           00897         CALL    POSICIONA_DISPLAY
+0342   3030           00898         MOVLW   0x30                    
+0343   07C9           00899         ADDWF   DIGITO2,F                               ;DEIXA EM ASCII
+0344   0849           00900         MOVF    DIGITO2,W
+0345   2???           00901         CALL    ESCREVE_DISPLAY
+                      00902 
+                      00903 
+0346   3088           00904         MOVLW   0x88                                    ;ESCREVE O VALOR DA VARIAVEL DIGITO3
+0347   2???           00905         CALL    POSICIONA_DISPLAY
+0348   3030           00906         MOVLW   0x30                    
+0349   07CA           00907         ADDWF   DIGITO3,F                               ;DEIXA EM ASCII
+034A   084A           00908         MOVF    DIGITO3,W
+034B   2???           00909         CALL    ESCREVE_DISPLAY
+                      00910 
+034C   1BA2           00911         BTFSC   RESTO_0                                 ;TESTA A FLAG RESTO_0
+034D   0008           00912         RETURN                                                  ;RETORNA
+                      00913 
+034E   3089           00914         MOVLW   0x89                                    ;,
+034F   2???           00915         CALL    POSICIONA_DISPLAY
+0350   302C           00916         MOVLW   ','
+0351   2???           00917         CALL    ESCREVE_DISPLAY
+                      00918 
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 28
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0352   308A           00919         MOVLW   0x8A                                    ;ESCREVE O VALOR DA VARIAVEL MEDIA_RESTO        
+0353   2???           00920         CALL    POSICIONA_DISPLAY
+0354   3030           00921         MOVLW   0x30
+Message[305]: Using default destination of 1 (file).
+0355   07D2           00922         ADDWF   MEDIA_RESTO                             ;DEIXA EM ASCII
+0356   0852           00923         MOVF    MEDIA_RESTO,W
+0357   2???           00924         CALL    ESCREVE_DISPLAY
+                      00925 
+0358   0008           00926         RETURN                                                  ;RETORNA
+                      00927 
+0359                  00928 MOSTRAR_MEDIA_2CASAS
+                      00929         
+0359   3001           00930         MOVLW   B'00000001'                             ;LIMPA DISPLAY
+035A   2???           00931         CALL    POSICIONA_DISPLAY
+035B   1722           00932         BSF             FIM_MEDIA                               ;SETA A FLAG DE FIM_MEDIA
+                      00933 
+                      00934         ;ESCREVE NA PRIMEIRA LINHA DO DISPLAY
+035C   3080           00935         MOVLW   0x80                                    ;M
+035D   2???           00936         CALL    POSICIONA_DISPLAY               
+035E   304D           00937         MOVLW   'M'
+035F   2???           00938         CALL    ESCREVE_DISPLAY
+                      00939 
+0360   3081           00940         MOVLW   0x81                                    ;E
+0361   2???           00941         CALL    POSICIONA_DISPLAY               
+0362   3045           00942         MOVLW   'E'
+0363   2???           00943         CALL    ESCREVE_DISPLAY
+                      00944 
+0364   3082           00945         MOVLW   0x82                                    ;D
+0365   2???           00946         CALL    POSICIONA_DISPLAY
+0366   3044           00947         MOVLW   'D'
+0367   2???           00948         CALL    ESCREVE_DISPLAY
+                      00949         
+0368   3083           00950         MOVLW   0x83                                    ;I
+0369   2???           00951         CALL    POSICIONA_DISPLAY
+036A   3049           00952         MOVLW   'I'
+036B   2???           00953         CALL    ESCREVE_DISPLAY
+                      00954         
+036C   3084           00955         MOVLW   0x84                                    ;A
+036D   2???           00956         CALL    POSICIONA_DISPLAY
+036E   3041           00957         MOVLW   'A'
+036F   2???           00958         CALL    ESCREVE_DISPLAY
+                      00959         
+0370   3085           00960         MOVLW   0x85                                    ;:
+0371   2???           00961         CALL    POSICIONA_DISPLAY
+0372   303A           00962         MOVLW   ':'
+0373   2???           00963         CALL    ESCREVE_DISPLAY
+                      00964 
+                      00965         
+0374   3086           00966         MOVLW   0x86                                    ;ESCREVE O VALOR DA VARIAVEL DIGITO2
+0375   2???           00967         CALL    POSICIONA_DISPLAY
+0376   3030           00968         MOVLW   0x30                    
+0377   07C9           00969         ADDWF   DIGITO2,F                               ;DEIXA EM ASCII
+0378   0849           00970         MOVF    DIGITO2,W
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 29
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0379   2???           00971         CALL    ESCREVE_DISPLAY
+                      00972 
+037A   3087           00973         MOVLW   0x87                                    ;ESCREVE O VALOR DA VARIAVEL DIGITO3
+037B   2???           00974         CALL    POSICIONA_DISPLAY
+037C   3030           00975         MOVLW   0x30                    
+037D   07CA           00976         ADDWF   DIGITO3,F                               ;DEIXA EM ASCII
+037E   084A           00977         MOVF    DIGITO3,W
+037F   2???           00978         CALL    ESCREVE_DISPLAY
+                      00979 
+0380   1BA2           00980         BTFSC   RESTO_0                                 ;TESTA A FLAG SE EXISTE VALOR DECIMAL
+0381   0008           00981         RETURN                                                  ;RETORNA
+                      00982 
+0382   3088           00983         MOVLW   0x88                                    ;,
+0383   2???           00984         CALL    POSICIONA_DISPLAY
+0384   302C           00985         MOVLW   ','
+0385   2???           00986         CALL    ESCREVE_DISPLAY
+                      00987 
+0386   3089           00988         MOVLW   0x89                                    ;ESCREVE O VALOR DA VARIAVEL MEDIA_RESTO
+0387   2???           00989         CALL    POSICIONA_DISPLAY
+0388   3030           00990         MOVLW   0x30
+Message[305]: Using default destination of 1 (file).
+0389   07D2           00991         ADDWF   MEDIA_RESTO                             ;DEIXA EM ASCII
+038A   0852           00992         MOVF    MEDIA_RESTO,W
+038B   2???           00993         CALL    ESCREVE_DISPLAY
+                      00994 
+038C   0008           00995         RETURN                                                  ;RETORNA
+                      00996 
+038D                  00997 MOSTRAR_MEDIA_1CASA
+                      00998         
+038D   3001           00999         MOVLW   B'00000001'                             ;LIMPA DISPLAY
+038E   2???           01000         CALL    POSICIONA_DISPLAY
+038F   1722           01001         BSF             FIM_MEDIA                               ;SETA A FLAG DE FIM_MEDIA
+                      01002 
+                      01003         ;ESCREVE NA PRIMEIRA LINHA DO DISPLAY
+0390   3080           01004         MOVLW   0x80                                    ;M
+0391   2???           01005         CALL    POSICIONA_DISPLAY               
+0392   304D           01006         MOVLW   'M'
+0393   2???           01007         CALL    ESCREVE_DISPLAY
+                      01008 
+0394   3081           01009         MOVLW   0x81                                    ;E
+0395   2???           01010         CALL    POSICIONA_DISPLAY               
+0396   3045           01011         MOVLW   'E'
+0397   2???           01012         CALL    ESCREVE_DISPLAY
+                      01013 
+0398   3082           01014         MOVLW   0x82                                    ;D
+0399   2???           01015         CALL    POSICIONA_DISPLAY
+039A   3044           01016         MOVLW   'D'
+039B   2???           01017         CALL    ESCREVE_DISPLAY
+                      01018         
+039C   3083           01019         MOVLW   0x83                                    ;I
+039D   2???           01020         CALL    POSICIONA_DISPLAY
+039E   3049           01021         MOVLW   'I'
+039F   2???           01022         CALL    ESCREVE_DISPLAY
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 30
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      01023         
+03A0   3084           01024         MOVLW   0x84                                    ;A
+03A1   2???           01025         CALL    POSICIONA_DISPLAY
+03A2   3041           01026         MOVLW   'A'
+03A3   2???           01027         CALL    ESCREVE_DISPLAY
+                      01028         
+03A4   3085           01029         MOVLW   0x85                                    ;:
+03A5   2???           01030         CALL    POSICIONA_DISPLAY
+03A6   303A           01031         MOVLW   ':'
+03A7   2???           01032         CALL    ESCREVE_DISPLAY
+                      01033 
+                      01034         
+03A8   3086           01035         MOVLW   0x86                                    ;ESCREVE O VALOR DA VARIAVEL DIGITO3
+03A9   2???           01036         CALL    POSICIONA_DISPLAY
+03AA   3030           01037         MOVLW   0x30                    
+03AB   07CA           01038         ADDWF   DIGITO3,F                               ;DEIXA EM ASCII
+03AC   084A           01039         MOVF    DIGITO3,W
+03AD   2???           01040         CALL    ESCREVE_DISPLAY
+                      01041 
+03AE   1BA2           01042         BTFSC   RESTO_0                                 ;TESTA A FLAG SE EXISTE VALOR DECIMAL
+03AF   0008           01043         RETURN                                                  ;RETORNA
+                      01044 
+03B0   3087           01045         MOVLW   0x87                                    ;,
+03B1   2???           01046         CALL    POSICIONA_DISPLAY
+03B2   302C           01047         MOVLW   ','
+03B3   2???           01048         CALL    ESCREVE_DISPLAY
+                      01049 
+                      01050 
+03B4   3088           01051         MOVLW   0x88                                    ;ESCREVE O VALOR DA VARIAVEL MEDIA_RESTO
+03B5   2???           01052         CALL    POSICIONA_DISPLAY
+03B6   3030           01053         MOVLW   0x30
+Message[305]: Using default destination of 1 (file).
+03B7   07D2           01054         ADDWF   MEDIA_RESTO                             ;DEIXA EM ASCII
+03B8   0852           01055         MOVF    MEDIA_RESTO,W
+03B9   2???           01056         CALL    ESCREVE_DISPLAY
+                      01057 
+03BA   0008           01058         RETURN                                                  ;RETORNA
+                      01059 
+03BB                  01060 DIGITOS
+                      01061 
+03BB   0847           01062         MOVF    BATATA,W                                ;MOVE CONTADOR PARA W
+03BC   00BC           01063         MOVWF   DIVIDENDO                               ;MOVE W PARA DIVIDENDO
+03BD   3064           01064         MOVLW   B'01100100'                             ;DECIMAL 100 EM BINARIO
+03BE   00BE           01065         MOVWF   DIVISOR                                 ;MOVE 100 PARA DIVIDOR PARA OBTER O PRIMEIRO DIG
+                            ITO
+03BF   2???           01066         CALL    DIVIDE_8x8                              ;CHAMA A ROTINA DE DIVISÃO
+                      01067 
+03C0   083B           01068         MOVF    QUOCIENTE,W                             ;MOVE O RESULTADO PARA W
+03C1   00C8           01069         MOVWF   DIGITO1                                 ;MOVE W PARA DIGITO1
+                      01070         ;MOVLW  0x30                    
+                      01071         ;ADDWF  DIGITO1,F                               ;DEIXA EM ASCII
+                      01072 
+03C2   083D           01073         MOVF    RESTO,W                                 ;MOVE O RESTO PARA W
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 31
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+03C3   00BC           01074         MOVWF   DIVIDENDO                               ;MOVE W PARA DIVIDENDO
+03C4   300A           01075         MOVLW   B'00001010'                             ;DECIMAL 10 EM BINARIO
+03C5   00BE           01076         MOVWF   DIVISOR                                 ;MOVE 10 PARA DIVIDOR PARA OBTER O SEGUNDO DIGIT
+                            O
+03C6   2???           01077         CALL    DIVIDE_8x8                              ;CHAMA A ROTINA DE DIVISÃO
+                      01078 
+03C7   083B           01079         MOVF    QUOCIENTE,W                             ;MOVE O RESULTADO PARA W
+03C8   00C9           01080         MOVWF   DIGITO2                                 ;MOVE W PARA DIGITO2
+                      01081         ;MOVLW  0x30                    
+                      01082         ;ADDWF  DIGITO2,F                               ;DEIXA EM ASCII
+                      01083 
+03C9   083D           01084         MOVF    RESTO,W                                 ;MOVE O RESTO PARA W
+03CA   00CA           01085         MOVWF   DIGITO3                                 ;MOVE W PARA DIGITO3
+                      01086         ;MOVLW  0x30                                                    
+                      01087         ;ADDWF  DIGITO3,F                               ;DEIXA EM ASCII
+                      01088 
+03CB   0008           01089         RETURN                                                  ;RETORNA
+                      01090 
+03CC                  01091 POSICIONA_DISPLAY
+                      01092 
+03CC   1009           01093         BCF             PORTE,0                                 ;ENTRA NO MODO INSTRUÇÃO DO DISPLAY
+03CD   0088           01094         MOVWF   PORTD
+03CE   2???           01095         CALL    GERA_PULSO
+                      01096         
+03CF   0008           01097         RETURN
+                      01098 
+03D0                  01099 ESCREVE_DISPLAY
+                      01100         
+03D0   1409           01101         BSF             PORTE,0                                 ;ENTRA NO MODO ESCRITA DO DISPLAY
+03D1   0088           01102         MOVWF   PORTD
+03D2   2???           01103         CALL    GERA_PULSO
+                      01104         
+03D3   0008           01105         RETURN
+                      01106 
+03D4                  01107 GERA_PULSO
+                      01108         
+03D4   1489           01109         BSF             PORTE,1                                 ;GERA PULSO PARA ESCRITA OU INSTRUÇÃO
+03D5   2???           01110         CALL    FILTRO                                  ;NO DISPLAY
+03D6   2???           01111         CALL    FILTRO
+03D7   1089           01112         BCF             PORTE,1
+                      01113 
+03D8   0008           01114         RETURN
+                      00476 #INCLUDE<OPARITH.INC>
+                      00001 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00002 ;*                            OERAÇÕES ARITMÉTICAS                             *
+                      00003 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00004 ;*                                                                             *
+                      00005 ;*                                   UTFPR                                     *
+                      00006 ;*                 UNIVERSIDADE TECNOLÓGICA FEDERAL DO PARANÁ                 *
+                      00007 ;*                                                                             *
+                      00008 ;*                                Ruahn Fuser                                  *
+                      00009 ;*                                                                             *
+                      00010 ;*                               VERSÃO: 1.0.0                                 *
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 32
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00011 ;*                                                                             *
+                      00012 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00013 ;*                            DESCRIÇÃO DO ARQUIVO                            *
+                      00014 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00015 ;
+                      00016 ; Include de Operações aritméticas
+                      00017 ;
+                      00018 ;
+                      00019 ;
+                      00020 ;
+                      00021 ;
+                      00022 ;
+                      00023 ;
+                      00024 
+                      00025 
+03D9                  00026 MULTIPLICA_4x4
+                      00027 
+03D9   0103           00028         clrw
+03DA   1003           00029         bcf STATUS,C
+03DB   1826           00030         btfsc MULT_1,0
+03DC   0729           00031         addwf MULT_2,W
+03DD   0DA9           00032         rlf MULT_2,F
+03DE   18A6           00033         btfsc MULT_1,1
+03DF   0729           00034         addwf MULT_2,W
+03E0   0DA9           00035         rlf MULT_2,F
+03E1   1926           00036         btfsc MULT_1,2
+03E2   0729           00037         addwf MULT_2,W
+03E3   0DA9           00038         rlf MULT_2,F
+03E4   19A6           00039         btfsc MULT_1,3
+03E5   0729           00040         addwf MULT_2,W
+03E6   00AA           00041         movwf PRODUTO
+03E7   0DA9           00042         rlf MULT_2,F
+03E8   0EA9           00043         swapf MULT_2,F
+                      00044 
+Warning[203]: Found opcode in column 1. (return)
+03E9   0008           00045 return
+                      00046 ;
+03EA                  00047 MULTIPLICA_8x8
+                      00048 
+03EA   01AB           00049         clrf PRODUTO_H
+03EB   01AC           00050         clrf PRODUTO_L
+                      00051 
+03EC                  00052 TESTE_ZERO
+                      00053 
+03EC   0826           00054         movf MULT_1,W
+03ED   3A00           00055         xorlw 0x00
+03EE   1903           00056         btfsc STATUS,Z
+Warning[203]: Found opcode in column 1. (return)
+03EF   0008           00057 return
+                      00058 
+03F0   0829           00059         movf MULT_2,W
+03F1   3A00           00060         xorlw 0x00
+                      00061 
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 33
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+03F2   1903           00062         btfsc STATUS,Z
+Warning[203]: Found opcode in column 1. (return)
+03F3   0008           00063 return
+                      00064 
+03F4                  00065 MULTIPLICA
+                      00066 
+03F4   0829           00067         movf MULT_2,W
+03F5   07AC           00068         addwf PRODUTO_L,F
+03F6   1803           00069         btfsc STATUS,C
+03F7   0AAB           00070         incf PRODUTO_H,F
+03F8   0BA6           00071         decfsz MULT_1,F
+03F9   2???           00072         goto MULTIPLICA
+                      00073 
+Warning[203]: Found opcode in column 1. (return)
+03FA   0008           00074 return
+                      00075 ;---------------------------------------------------------------
+                      00076 
+03FB                  00077 MULTIPLICA_10x8
+                      00078 
+03FB   01AB           00079         clrf PRODUTO_H
+03FC   01AC           00080         clrf PRODUTO_L
+                      00081 
+03FD   0829           00082         movf MULT_2,W
+03FE   00A5           00083         movwf MULT_TMP
+                      00084 
+03FF                  00085 TESTA_MULT_1
+                      00086 
+03FF   18A7           00087         btfsc MULT_1_H,1
+0400   2???           00088         goto TESTA_MULT_2
+0401   1827           00089         btfsc MULT_1_H,0
+0402   2???           00090         goto TESTA_MULT_2
+                      00091 
+                      00092 
+0403   0828           00093         movf MULT_1_L,W
+0404   3A00           00094         xorlw 0x00
+0405   1903           00095         btfsc STATUS,Z
+                      00096 
+Warning[203]: Found opcode in column 1. (return)
+0406   0008           00097 return
+                      00098 
+0407                  00099 TESTA_MULT_2
+                      00100 
+0407   0829           00101         movf MULT_2,W
+0408   3A00           00102         xorlw 0x00
+0409   1903           00103         btfsc STATUS,Z
+                      00104 
+Warning[203]: Found opcode in column 1. (return)
+040A   0008           00105 return
+                      00106 
+040B                  00107 MULTIPLICAX
+                      00108 
+040B   0828           00109         movf MULT_1_L,W
+040C   07AC           00110         addwf PRODUTO_L,F
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 34
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+040D   1803           00111         btfsc STATUS,C
+                      00112 
+040E   0AAB           00113         incf PRODUTO_H,F
+040F   0827           00114         movf MULT_1_H,W
+Message[305]: Using default destination of 1 (file).
+0410   07AB           00115         addwf PRODUTO_H
+0411   0BA5           00116         decfsz MULT_TMP,F
+0412   2???           00117         goto MULTIPLICAX
+                      00118 
+Warning[203]: Found opcode in column 1. (return)
+0413   0008           00119 return
+                      00120 ;************************************************************
+                      00121 ;***********************************************************
+                      00122 ;************************************************************
+                      00123 
+                      00124 ;dividendo/divisor = quociente + resto.
+                      00125 
+                      00126 
+                      00127 
+0414                  00128 DIVIDE_16x16
+                      00129 
+0414   01AD           00130         clrf QUOCIENTE_H
+0415   01AE           00131         clrf QUOCIENTE_L
+0416   0830           00132         movf DIVIDENDO_L,W
+0417   00B4           00133         movwf RESTOTMP_L
+0418   082F           00134         movf DIVIDENDO_H,W
+0419   00B3           00135         movwf RESTOTMP_H
+                      00136 
+041A                  00137 T_DIVIDENDO
+041A   082F           00138         movf    DIVIDENDO_H,W
+041B   00B1           00139         movwf   DIVIDENDOTMP_H
+041C   0830           00140         movf    DIVIDENDO_L,W
+041D   00B2           00141         movwf   DIVIDENDOTMP_L
+041E   0835           00142         movf    DIVISOR_H,W
+041F   00B7           00143         movwf   DIVISORTMP_H
+0420   0836           00144         movf    DIVISOR_L,W
+0421   00B8           00145         movwf   DIVISORTMP_L
+                      00146         
+0422   0838           00147         movf DIVISORTMP_L,W
+0423   0232           00148         subwf DIVIDENDOTMP_L,W
+0424   3001           00149         movlw 0x01
+0425   1C03           00150         btfss STATUS,C
+0426   0231           00151         subwf DIVIDENDOTMP_H,W
+0427   1C03           00152         btfss STATUS,C
+0428   2???           00153         goto DIV
+0429   0830           00154         movf DIVIDENDO_L,W
+042A   00BA           00155         movwf RESTO_L 
+042B   082F           00156         movf DIVIDENDO_H,W
+042C   00B9           00157         movwf RESTO_H 
+                      00158 
+042D                  00159 DIV
+                      00160 
+042D   2???           00161         call SUBTRAI_16x16
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 35
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+042E   3001           00162         movlw 0x01
+042F   1C03           00163         btfss STATUS,C
+                      00164 
+Warning[203]: Found opcode in column 1. (return)
+0430   0008           00165 return
+                      00166 
+0431   07AE           00167         addwf QUOCIENTE_L,F
+0432   1803           00168         btfsc STATUS,C
+0433   0AAD           00169         incf QUOCIENTE_H,F
+0434   0834           00170         movf RESTOTMP_L,W
+0435   00BA           00171         movwf RESTO_L
+0436   0833           00172         movf RESTOTMP_H,W
+0437   00B9           00173         movwf RESTO_H
+                      00174 
+Warning[203]: Found opcode in column 1. (goto)
+0438   2???           00175 goto DIV
+                      00176 
+0439                  00177 SUBTRAI_16x16
+                      00178 
+0439   0836           00179         movf DIVISOR_L,W
+043A   02B4           00180         subwf RESTOTMP_L,F
+043B   3001           00181         movlw 0x01
+043C   1C03           00182         btfss STATUS,C
+043D   02B3           00183         subwf RESTOTMP_H,F
+043E   1C03           00184         btfss STATUS,C
+043F   2???           00185         goto EMPRESTA
+0440   0835           00186         movf DIVISOR_H,W
+0441   02B3           00187         subwf RESTOTMP_H,F
+                      00188 
+Warning[203]: Found opcode in column 1. (return)
+0442   0008           00189 return
+                      00190 
+0443                  00191 EMPRESTA
+                      00192 
+0443   0835           00193         movf DIVISOR_H,W
+0444   02B3           00194         subwf RESTOTMP_H,F
+0445   1003           00195         bcf STATUS,C
+Warning[203]: Found opcode in column 1. (return)
+0446   0008           00196 return
+                      00197 
+0447                  00198 DIVIDE_8x8
+                      00199 
+Warning[203]: Found opcode in column 1. (clrf)
+0447   01BB           00200 clrf QUOCIENTE
+Warning[203]: Found opcode in column 1. (movf)
+0448   083C           00201 movf DIVIDENDO,W
+Warning[203]: Found opcode in column 1. (movwf)
+0449   00BD           00202 movwf RESTO
+                      00203 
+044A                  00204 DIV2
+                      00205 
+Warning[203]: Found opcode in column 1. (movf)
+044A   083E           00206 movf DIVISOR,W
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 36
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+Warning[203]: Found opcode in column 1. (subwf)
+044B   023D           00207 subwf RESTO,W
+Warning[203]: Found opcode in column 1. (btfss)
+044C   1C03           00208 btfss STATUS,C
+Warning[203]: Found opcode in column 1. (return)
+044D   0008           00209 return
+Warning[203]: Found opcode in column 1. (movwf)
+044E   00BD           00210 movwf RESTO
+Warning[203]: Found opcode in column 1. (incf)
+044F   0ABB           00211 incf QUOCIENTE,F
+                      00212 
+Warning[203]: Found opcode in column 1. (goto)
+0450   2???           00213 goto DIV2
+                      00214 
+0451                  00215 SUBTRAI_16x162
+                      00216 
+Warning[203]: Found opcode in column 1. (movf)
+0451   0840           00217 movf MINUENDO_L,W
+Warning[203]: Found opcode in column 1. (movwf)
+0452   00C2           00218 movwf DIFERENCA_L
+Warning[203]: Found opcode in column 1. (movf)
+0453   083F           00219 movf MINUENDO_H,W
+Warning[203]: Found opcode in column 1. (movwf)
+0454   00C1           00220 movwf DIFERENCA_H
+                      00221 
+Warning[203]: Found opcode in column 1. (movf)
+0455   0844           00222 movf SUBTRAENDO_L,W
+Warning[203]: Found opcode in column 1. (subwf)
+0456   02C2           00223 subwf DIFERENCA_L,F
+Warning[203]: Found opcode in column 1. (movlw)
+0457   3001           00224 movlw 0x01
+Warning[203]: Found opcode in column 1. (btfss)
+0458   1C03           00225 btfss STATUS,C
+Warning[203]: Found opcode in column 1. (subwf)
+0459   02C1           00226 subwf DIFERENCA_H,F
+Warning[203]: Found opcode in column 1. (btfss)
+045A   1C03           00227 btfss STATUS,C
+Warning[203]: Found opcode in column 1. (call)
+045B   2???           00228 call EMPRESTA2
+Warning[203]: Found opcode in column 1. (movf)
+045C   0843           00229 movf SUBTRAENDO_H,W
+Warning[203]: Found opcode in column 1. (subwf)
+045D   02C1           00230 subwf DIFERENCA_H,F
+                      00231 
+Warning[203]: Found opcode in column 1. (return)
+045E   0008           00232 return
+                      00233 
+045F                  00234 EMPRESTA2
+                      00235 
+Warning[203]: Found opcode in column 1. (movf)
+045F   0843           00236 movf SUBTRAENDO_H,W
+Warning[203]: Found opcode in column 1. (subwf)
+0460   02C1           00237 subwf DIFERENCA_H,F
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 37
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+Warning[203]: Found opcode in column 1. (bcf)
+0461   1003           00238 bcf STATUS,C
+                      00239 
+Warning[203]: Found opcode in column 1. (return)
+0462   0008           00240 return
+                      00477 #INCLUDE<TECLADO.INC>
+0463                  00001 TECLADO
+                      00002 
+0463   30FE           00003         MOVLW   B'11111110'             ;PASSA ESSE VALOR BINARIO PARA O REGISTRADOR W+
+0464   0087           00004         MOVWF   PORTC                   ;MOVE O VALOR DE W PARA O PORTC, HABILITANDO APENAS O C0
+0465   2???           00005         CALL    PORT_C0                 ;CHAMA A ROTINA PORT_C0
+                      00006 
+0466   30FB           00007         MOVLW   B'11111011'             ;PASSA ESSE VALOR BINARIO PARA O REGISTRADOR W
+0467   0087           00008         MOVWF   PORTC                   ;MOVE O VALOR DE W PARA O PORTC, HABILITANDO APENAS O C2
+0468   2???           00009         CALL    PORT_C2                 ;CHAMA A ROTINA PORT_C2
+                      00010 
+0469   30F7           00011         MOVLW   B'11110111'             ;PASSA ESSE VALOR BINARIO PARA O REGISTRADOR W
+046A   0087           00012         MOVWF   PORTC                   ;MOVE O VALOR DE W PARA O PORTC, HABILITANDO APENAS O C3
+046B   2???           00013         CALL    PORT_C3                 ;CHAMA A ROTINA PORT_C3
+                      00014 
+046C   2???           00015         GOTO    MAIN                    ;RETORNA PARA O MAIN
+                      00016 
+046D                  00017 PORT_C0
+                      00018 
+046D   1C06           00019         BTFSS   PORTB,0                 ;TESTA O PORTB0, SE ESTIVER APERTADO CHAMA A ROTINA TECLA_0
+046E   2???           00020         CALL    TECLA_0                 ;CHAMA A ROTINA TECLA_0
+046F   1C86           00021         BTFSS   PORTB,1                 ;TESTA O PORTB1, SE ESTIVER APERTADO CHAMA A ROTINA TECLA_1
+0470   2???           00022         CALL    TECLA_1                 ;CHAMA A ROTINA TECLA_1
+0471   1D06           00023         BTFSS   PORTB,2                 ;TESTA O PORTB2, SE ESTIVER APERTADO CHAMA A ROTINA TECLA_2
+0472   2???           00024         CALL    TECLA_2                 ;CHAMA A ROTINA TECLA_2
+0473   1D86           00025         BTFSS   PORTB,3                 ;TESTA O PORTB3, SE ESTIVER APERTADO CHAMA A ROTINA TECLA_3
+0474   2???           00026         CALL    TECLA_3                 ;CHAMA A ROTINA TECLA_3
+                      00027         
+0475   0008           00028         RETURN                                  ;RETORNA PARA A ROTINA TECLADO
+                      00029 
+0476                  00030 PORT_C2
+                      00031 
+0476   1C06           00032         BTFSS   PORTB,0                 ;TESTA O PORTB0, SE ESTIVER APERTADO CHAMA A ROTINA TECLA_8
+0477   2???           00033         CALL    TECLA_8                 ;CHAMA A ROTINA TECLA_8
+0478   1C86           00034         BTFSS   PORTB,1                 ;TESTA O PORTB1, SE ESTIVER APERTADO CHAMA A ROTINA TECLA_9
+0479   2???           00035         CALL    TECLA_9                 ;CHAMA A ROTINA TECLA_9
+047A   1D06           00036         BTFSS   PORTB,2                 ;TESTA O PORTB2, SE ESTIVER APERTADO CHAMA A ROTINA TECLA_A
+047B   2???           00037         CALL    TECLA_A                 ;CHAMA A ROTINA TECLA_A
+047C   1D86           00038         BTFSS   PORTB,3                 ;TESTA O PORTB3, SE ESTIVER APERTADO CHAMA A ROTINA TECLA_B
+047D   2???           00039         CALL    TECLA_B                 ;CHAMA A ROTINA TECLA_B
+                      00040         
+047E   0008           00041         RETURN                                  ;RETORNA PARA A ROTINA TECLADO
+                      00042 
+047F                  00043 PORT_C3
+                      00044 
+047F   1C06           00045         BTFSS   PORTB,0                 ;TESTA O PORTB0, SE ESTIVER APERTADO CHAMA A ROTINA TECLA_C
+0480   2???           00046         CALL    TECLA_C                 ;CHAMA A ROTINA TECLA_C
+0481   1C86           00047         BTFSS   PORTB,1                 ;TESTA O PORTB1, SE ESTIVER APERTADO CHAMA A ROTINA TECLA_D
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 38
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0482   2???           00048         CALL    TECLA_D                 ;CHAMA A ROTINA TECLA_D
+0483   1D06           00049         BTFSS   PORTB,2                 ;TESTA O PORTB2, SE ESTIVER APERTADO CHAMA A ROTINA TECLA_E
+0484   2???           00050         CALL    TECLA_E                 ;CHAMA A ROTINA TECLA_E
+0485   1D86           00051         BTFSS   PORTB,3                 ;TESTA O PORTB3, SE ESTIVER APERTADO CHAMA A ROTINA TECLA_F
+0486   2???           00052         CALL    TECLA_F                 ;CHAMA A ROTINA TECLA_F
+                      00053         
+0487   0008           00054         RETURN                                  ;RETORNA PARA A ROTINA TECLADO
+                      00055 
+                      00056 
+0488                  00057 TECLA_0
+                      00058 
+0488   1806           00059         BTFSC   PORTB,0                 ;TESTA SE O BIT 0 DO PORTB ESTA COM VALOR 0
+0489   0008           00060         RETURN                                  ;RETORNA PARA A ROTINA PORT_C0
+048A   2???           00061         CALL    FILTRO                  ;CHAMA A ROTINA FILTRO (DELAY)
+048B   1806           00062         BTFSC   PORTB,0                 ;TESTA SE O BIT 0 DO PORTB ESTA COM VALOR 0
+048C   0008           00063         RETURN                                  ;RETORNA PARA A ROTINA PORT_C0
+048D   2???           00064         CALL    FILTRO                  ;CHAMA A ROTINA FILTRO (DELAY)
+048E   1806           00065         BTFSC   PORTB,0                 ;TESTA SE O BIT 0 DO PORTB ESTA COM VALOR 0
+048F   0008           00066         RETURN                                  ;RETORNA PARA A ROTINA PORT_C0
+0490   1C06           00067         BTFSS   PORTB,0                 ;VERIFICA SE O BOTAO FOI SOLTO
+0491   2???           00068         GOTO    $-1                             ;EXECUTA A LINHA ANTERIOR NOVAMENTE
+                      00069         
+0492   1AA2           00070         BTFSC   ESTADO_MOTOR    ;TRAVA DE MOTOR LIGADO
+0493   0008           00071         RETURN
+                      00072 
+0494   1505           00073         BSF             PORTA,2                 ;LIGA O BUZZER
+0495   1422           00074         BSF             ESTADO_BOTAO    ;SETA ESTADO_BOTAO P/ 1 HABILITANDO A TECLA_1
+0496   3031           00075         MOVLW   0x31                    ;PASSA O VALOR 1 PARA W
+0497   00C5           00076         MOVWF   CAIXA                   ;PASSA O VALOR DE W PARA A VARIAVEL CAIXA
+0498   2???           00077         CALL    CAIXA_LIVRE             ;CHAMA A ESCRITA DE CAIXA LIVRE
+0499   2???           00078         CALL    INTERRUPT               ;CHAMA A INTERRUPCAO
+049A   2???           00079         CALL    FILTRO                  ;DELAY
+049B   2???           00080         CALL    FILTRO                  ;DELAY
+049C   2???           00081         CALL    FILTRO                  ;DELAY
+049D   2???           00082         CALL    FILTRO                  ;DELAY
+049E   2???           00083         CALL    FILTRO                  ;DELAY
+049F   2???           00084         CALL    FILTRO                  ;DELAY
+04A0   2???           00085         CALL    FILTRO                  ;DELAY
+04A1   2???           00086         CALL    FILTRO                  ;DELAY
+04A2   2???           00087         CALL    FILTRO                  ;DELAY
+04A3   2???           00088         CALL    FILTRO                  ;DELAY
+04A4   2???           00089         CALL    FILTRO                  ;DELAY
+04A5   2???           00090         CALL    FILTRO                  ;DELAY
+04A6   2???           00091         CALL    FILTRO                  ;DELAY
+04A7   1105           00092         BCF             PORTA,2                 ;DESLIGA O BUZZER
+                      00093         
+04A8   0008           00094         RETURN                                  ;RETORNA PARA A ROTINA PORT_C0
+                      00095 
+04A9                  00096 TECLA_1
+                      00097 
+04A9   1886           00098         BTFSC   PORTB,1                 ;TESTA SE O BIT 1 DO PORTB ESTA COM VALOR 0
+04AA   0008           00099         RETURN                                  ;RETORNA PARA A ROTINA PORT_C0
+04AB   2???           00100         CALL    FILTRO                  ;CHAMA A ROTINA FILTRO (DELAY)
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 39
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+04AC   1886           00101         BTFSC   PORTB,1                 ;TESTA SE O BIT 1 DO PORTB ESTA COM VALOR 0
+04AD   0008           00102         RETURN                                  ;RETORNA PARA A ROTINA PORT_C0
+04AE   2???           00103         CALL    FILTRO                  ;CHAMA A ROTINA FILTRO (DELAY)
+04AF   1886           00104         BTFSC   PORTB,1                 ;TESTA SE O BIT 1 DO PORTB ESTA COM VALOR 0
+04B0   0008           00105         RETURN                                  ;RETORNA PARA A ROTINA PORT_C0
+04B1   1C86           00106         BTFSS   PORTB,1                 ;VERIFICA SE O BOTAO FOI SOLTO
+04B2   2???           00107         GOTO    $-1                             ;EXECUTA A LINHA ANTERIOR NOVAMENTE
+                      00108 
+04B3   1C22           00109         BTFSS   ESTADO_BOTAO    ;TESTA ESTADO_BOTAO
+04B4   0008           00110         RETURN                                  ;RETORNA PARA A ROTINA PORT_C0
+                      00111 
+Message[305]: Using default destination of 1 (file).
+04B5   0AC6           00112         INCF    CONTADOR                ;INCREMENTA O CONTADOR DE PESSOAS
+04B6   3031           00113         MOVLW   0x31                    ;PASSA O VALOR 1 PARA W
+04B7   00C5           00114         MOVWF   CAIXA                   ;PASSA O VALOR DE W PARA A VARIAVEL CAIXA
+04B8   2???           00115         CALL    CAIXA_FIM               ;CHAMA A FINALIZAÇÃO DO ATENDIMENTO
+04B9   1022           00116         BCF             ESTADO_BOTAO    ;LIMPA ESTADO_BOTAO, DESABILITANDO A TECLA_1
+04BA   1622           00117         BSF             FLAG_10S                ;SETA A FLAG DE 10s
+04BB   16A2           00118         BSF             ESTADO_MOTOR    ;SETA A FLAG DE ESTADO DO MOTOR
+                      00119         
+04BC   0008           00120         RETURN                                  ;RETORNA PARA A ROTINA PORT_C0
+                      00121 
+04BD                  00122 TECLA_2
+                      00123         
+04BD   1906           00124         BTFSC   PORTB,2                 ;TESTA SE O BIT 2 DO PORTB ESTA COM VALOR 0
+04BE   0008           00125         RETURN                                  ;RETORNA PARA A ROTINA PORT_C0
+04BF   2???           00126         CALL    FILTRO                  ;CHAMA A ROTINA FILTRO (DELAY)
+04C0   1906           00127         BTFSC   PORTB,2                 ;TESTA SE O BIT 2 DO PORTB ESTA COM VALOR 0
+04C1   0008           00128         RETURN                                  ;RETORNA PARA A ROTINA PORT_C0
+04C2   2???           00129         CALL    FILTRO                  ;CHAMA A ROTINA FILTRO (DELAY)
+04C3   1906           00130         BTFSC   PORTB,2                 ;TESTA SE O BIT 2 DO PORTB ESTA COM VALOR 0
+04C4   0008           00131         RETURN                                  ;RETORNA PARA A ROTINA PORT_C0
+04C5   1D06           00132         BTFSS   PORTB,2                 ;VERIFICA SE O BOTAO FOI SOLTO
+04C6   2???           00133         GOTO    $-1                             ;EXECUTA A LINHA ANTERIOR NOVAMENTE
+                      00134 
+04C7   0846           00135         MOVF    CONTADOR,W              ;MOVE CONTADOR P/ W
+04C8   00C7           00136         MOVWF   BATATA                  ;MOVE W P/ BATATA
+04C9   2???           00137         CALL    DIGITOS                 ;CHAMA A ROTINA DE CALCULO DOS DIGITOS
+04CA   3030           00138         MOVLW   0x30                    
+04CB   07C8           00139         ADDWF   DIGITO1,F               ;DEIXA EM ASCII                 
+04CC   07C9           00140         ADDWF   DIGITO2,F               ;DEIXA EM ASCII                 
+04CD   07CA           00141         ADDWF   DIGITO3,F               ;DEIXA EM ASCII
+04CE   2???           00142         CALL    MOSTRAR_CONTADOR;MOSTRA CONTADOR NO LCD
+                      00143         
+04CF   0008           00144         RETURN                                  ;RETORNA PARA A ROTINA PORT_C0
+                      00145 
+04D0                  00146 TECLA_3
+                      00147         
+04D0   1986           00148         BTFSC   PORTB,3                 ;TESTA SE O BIT 3 DO PORTB ESTA COM VALOR 0
+04D1   0008           00149         RETURN                                  ;RETORNA PARA A ROTINA PORT_C0
+04D2   2???           00150         CALL    FILTRO                  ;CHAMA A ROTINA FILTRO (DELAY)
+04D3   1986           00151         BTFSC   PORTB,3                 ;TESTA SE O BIT 3 DO PORTB ESTA COM VALOR 0
+04D4   0008           00152         RETURN                                  ;RETORNA PARA A ROTINA PORT_C0
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 40
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+04D5   2???           00153         CALL    FILTRO                  ;CHAMA A ROTINA FILTRO (DELAY)
+04D6   1986           00154         BTFSC   PORTB,3                 ;TESTA SE O BIT 3 DO PORTB ESTA COM VALOR 0
+04D7   0008           00155         RETURN                                  ;RETORNA PARA A ROTINA PORT_C0
+04D8   1D86           00156         BTFSS   PORTB,3                 ;VERIFICA SE O BOTAO FOI SOLTO
+04D9   2???           00157         GOTO    $-1                             ;EXECUTA A LINHA ANTERIOR NOVAMENTE
+                      00158 
+04DA   1D22           00159         BTFSS   ESTADO_E2PROM   ;TESTA A FLAG, SE ENDERECO SETADO EXECUTA
+04DB   0008           00160         RETURN  
+                      00161 
+04DC   2???           00162         CALL    ESCR_E2PROM             ;VAI PARA A ROTINA DE ESCRITA DA E2PROM
+04DD   2???           00163         CALL    FIM_ESCRITA             ;ROTINA DE FIM DA ESCRITA NA E2PROM
+04DE   1122           00164         BCF             ESTADO_E2PROM   ;LIMPA A FLAG
+                      00165         
+04DF   0008           00166         RETURN                                  ;RETORNA PARA A ROTINA PORT_C0
+                      00167 
+04E0                  00168 TECLA_8
+                      00169         
+04E0   1806           00170         BTFSC   PORTB,0                 ;TESTA SE O BIT 0 DO PORTB ESTA COM VALOR 0
+04E1   0008           00171         RETURN                                  ;RETORNA PARA A ROTINA PORT_C2
+04E2   2???           00172         CALL    FILTRO                  ;CHAMA A ROTINA FILTRO (DELAY)
+04E3   1806           00173         BTFSC   PORTB,0                 ;TESTA SE O BIT 0 DO PORTB ESTA COM VALOR 0
+04E4   0008           00174         RETURN                                  ;RETORNA PARA A ROTINA PORT_C2
+04E5   2???           00175         CALL    FILTRO                  ;CHAMA A ROTINA FILTRO (DELAY)
+04E6   1806           00176         BTFSC   PORTB,0                 ;TESTA SE O BIT 0 DO PORTB ESTA COM VALOR 0
+04E7   0008           00177         RETURN                                  ;RETORNA PARA A ROTINA PORT_C2
+04E8   1C06           00178         BTFSS   PORTB,0                 ;VERIFICA SE O BOTAO FOI SOLTO
+04E9   2???           00179         GOTO    $-1                             ;EXECUTA A LINHA ANTERIOR NOVAMENTE
+                      00180 
+04EA   3000           00181         MOVLW   0x00                    ;SETA O VALOR 0x01
+04EB   00CC           00182         MOVWF   ENDERECO                ;MOVE ESSE VALOR PARA A VARIAVEL ENDERECO
+04EC   2???           00183         CALL    MOSTRAR_ENDERECO;CHAMA A ROTINA DE MOSTRAR ENDERECO
+04ED   1522           00184         BSF             ESTADO_E2PROM   ;SETA A FLAG DA E2PROM
+                      00185         
+04EE   0008           00186         RETURN                                  ;RETORNA PARA A ROTINA PORT_C2
+                      00187 
+04EF                  00188 TECLA_9
+                      00189 
+04EF   1886           00190         BTFSC   PORTB,1                 ;TESTA SE O BIT 1 DO PORTB ESTA COM VALOR 0
+04F0   0008           00191         RETURN                                  ;RETORNA PARA A ROTINA PORT_C2
+04F1   2???           00192         CALL    FILTRO                  ;CHAMA A ROTINA FILTRO (DELAY)
+04F2   1886           00193         BTFSC   PORTB,1                 ;TESTA SE O BIT 1 DO PORTB ESTA COM VALOR 0
+04F3   0008           00194         RETURN                                  ;RETORNA PARA A ROTINA PORT_C2
+04F4   2???           00195         CALL    FILTRO                  ;CHAMA A ROTINA FILTRO (DELAY)
+04F5   1886           00196         BTFSC   PORTB,1                 ;TESTA SE O BIT 1 DO PORTB ESTA COM VALOR 0
+04F6   0008           00197         RETURN                                  ;RETORNA PARA A ROTINA PORT_C2
+04F7   1C86           00198         BTFSS   PORTB,1                 ;VERIFICA SE O BOTAO FOI SOLTO
+04F8   2???           00199         GOTO    $-1                             ;EXECUTA A LINHA ANTERIOR NOVAMENTE
+                      00200 
+04F9   3001           00201         MOVLW   0x01                    ;SETA O VALOR 0x01
+04FA   00CC           00202         MOVWF   ENDERECO                ;MOVE ESSE VALOR PARA A VARIAVEL ENDERECO
+04FB   2???           00203         CALL    MOSTRAR_ENDERECO;CHAMA A ROTINA DE MOSTRAR ENDERECO
+04FC   1522           00204         BSF             ESTADO_E2PROM   ;SETA A FLAG DA E2PROM
+                      00205         
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 41
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+04FD   0008           00206         RETURN                                  ;RETORNA PARA A ROTINA PORT_C2
+                      00207 
+04FE                  00208 TECLA_A
+                      00209         
+04FE   1906           00210         BTFSC   PORTB,2                 ;TESTA SE O BIT 2 DO PORTB ESTA COM VALOR 0
+04FF   0008           00211         RETURN                                  ;RETORNA PARA A ROTINA PORT_C2
+0500   2???           00212         CALL    FILTRO                  ;CHAMA A ROTINA FILTRO (DELAY)
+0501   1906           00213         BTFSC   PORTB,2                 ;TESTA SE O BIT 2 DO PORTB ESTA COM VALOR 0
+0502   0008           00214         RETURN                                  ;RETORNA PARA A ROTINA PORT_C2
+0503   2???           00215         CALL    FILTRO                  ;CHAMA A ROTINA FILTRO (DELAY)
+0504   1906           00216         BTFSC   PORTB,2                 ;TESTA SE O BIT 2 DO PORTB ESTA COM VALOR 0
+0505   0008           00217         RETURN                                  ;RETORNA PARA A ROTINA PORT_C2
+0506   1D06           00218         BTFSS   PORTB,2                 ;VERIFICA SE O BOTAO FOI SOLTO
+0507   2???           00219         GOTO    $-1                             ;EXECUTA A LINHA ANTERIOR NOVAMENTE
+                      00220 
+0508   3002           00221         MOVLW   0x02                    ;SETA O VALOR 0x01
+0509   00CC           00222         MOVWF   ENDERECO                ;MOVE ESSE VALOR PARA A VARIAVEL ENDERECO
+050A   2???           00223         CALL    MOSTRAR_ENDERECO;CHAMA A ROTINA DE MOSTRAR ENDERECO
+050B   1522           00224         BSF             ESTADO_E2PROM   ;SETA A FLAG DA E2PROM
+                      00225         
+050C   0008           00226         RETURN                                  ;RETORNA PARA A ROTINA PORT_C2
+                      00227 
+050D                  00228 TECLA_B
+                      00229 
+050D   1986           00230         BTFSC   PORTB,3                 ;TESTA SE O BIT 3 DO PORTB ESTA COM VALOR 0
+050E   0008           00231         RETURN                                  ;RETORNA PARA A ROTINA PORT_C2
+050F   2???           00232         CALL    FILTRO                  ;CHAMA A ROTINA FILTRO (DELAY)
+0510   1986           00233         BTFSC   PORTB,3                 ;TESTA SE O BIT 3 DO PORTB ESTA COM VALOR 0
+0511   0008           00234         RETURN                                  ;RETORNA PARA A ROTINA PORT_C2
+0512   2???           00235         CALL    FILTRO                  ;CHAMA A ROTINA FILTRO (DELAY)
+0513   1986           00236         BTFSC   PORTB,3                 ;TESTA SE O BIT 3 DO PORTB ESTA COM VALOR 0
+0514   0008           00237         RETURN                                  ;RETORNA PARA A ROTINA PORT_C2
+0515   1D86           00238         BTFSS   PORTB,3                 ;VERIFICA SE O BOTAO FOI SOLTO
+0516   2???           00239         GOTO    $-1                             ;EXECUTA A LINHA ANTERIOR NOVAMENTE
+                      00240 
+0517   1D22           00241         BTFSS   ESTADO_E2PROM   ;TESTA A FLAG, SE ENDERECO SETADO EXECUTA
+0518   0008           00242         RETURN  
+                      00243 
+0519   2???           00244         CALL    LEIT_E2PROM             ;INICIA A LEITURA DA E2PROM
+051A   084B           00245         MOVF    DADO,W                  ;MOVE DADO P/ W
+051B   00C7           00246         MOVWF   BATATA                  ;MOVE W P/ BATATA
+051C   2???           00247         CALL    DIGITOS                 ;CHAMA A ROTINA DE CALCULO DOS DIGITOS
+051D   3030           00248         MOVLW   0x30                    ;MOVE O VALOR 0 P/ ASCII
+051E   07C8           00249         ADDWF   DIGITO1,F               ;DEIXA EM ASCII                 
+051F   07C9           00250         ADDWF   DIGITO2,F               ;DEIXA EM ASCII                 
+0520   07CA           00251         ADDWF   DIGITO3,F               ;DEIXA EM ASCII
+0521   2???           00252         CALL    MOSTRAR_CONTADOR;CHAMA A ROTINA DE CALCULO DOS DIGITOS E MOSTRA CONTADOR NO LCD
+0522   1122           00253         BCF             ESTADO_E2PROM   ;LIMPA A FLAG
+                      00254         
+0523   0008           00255         RETURN                                  ;RETORNA PARA A ROTINA PORT_C2
+                      00256 
+0524                  00257 TECLA_C
+                      00258 
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 42
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0524   1806           00259         BTFSC   PORTB,0                 ;TESTA SE O BIT 0 DO PORTB ESTA COM VALOR 0
+0525   0008           00260         RETURN                                  ;RETORNA PARA A ROTINA PORT_C3
+0526   2???           00261         CALL    FILTRO                  ;CHAMA A ROTINA FILTRO (DELAY)
+0527   1806           00262         BTFSC   PORTB,0                 ;TESTA SE O BIT 0 DO PORTB ESTA COM VALOR 0
+0528   0008           00263         RETURN                                  ;RETORNA PARA A ROTINA PORT_C3
+0529   2???           00264         CALL    FILTRO                  ;CHAMA A ROTINA FILTRO (DELAY)
+052A   1806           00265         BTFSC   PORTB,0                 ;TESTA SE O BIT 0 DO PORTB ESTA COM VALOR 0
+052B   0008           00266         RETURN                                  ;RETORNA PARA A ROTINA PORT_C3
+052C   1C06           00267         BTFSS   PORTB,0                 ;VERIFICA SE O BOTAO FOI SOLTO
+052D   2???           00268         GOTO    $-1                             ;EXECUTA A LINHA ANTERIOR NOVAMENTE
+                      00269 
+052E   1AA2           00270         BTFSC   ESTADO_MOTOR    ;TRAVA DE MOTOR LIGADO
+052F   0008           00271         RETURN                                  ;RETORNA
+                      00272 
+0530   1C22           00273         BTFSS   ESTADO_BOTAO    ;TRAVA DE NAO ATENDIMENTO
+0531   0008           00274         RETURN                                  ;RETORNA
+                      00275 
+0532   3059           00276         MOVLW   B'01011001'             ;VELOCIDADE DESEJADA DE 35%
+0533   009B           00277         MOVWF   CCPR2L                  ;MOVE W P/ O REGISTRADOR CCPR2L
+                      00278 
+0534   161D           00279         BSF             CCP2CON,4               ;SETA CCP2CON BIT 4 P/ VELOCIDADE DESEJADA DE 35%
+0535   169D           00280         BSF             CCP2CON,5               ;SETA CCP2CON BIT 5 P/ VELOCIDADE DESEJADA DE 35%
+                      00281 
+0536   1606           00282         BSF             PORTB,4                 ;LIGANDO O MOTOR
+0537   1286           00283         BCF             PORTB,5                 ;LIGANDO O MOTOR
+                      00284 
+0538   2???           00285         CALL    INTERRUPT               ;CHAMA A INTERRUPCAO
+0539   2???           00286         CALL    MOSTRAR_V33             ;CHAMA O DISPLAY
+                      00287 
+053A   16A2           00288         BSF             ESTADO_MOTOR    ;SETA A VARIAVEL DE TRAVA DO MOTOR
+                      00289         
+053B   0008           00290         RETURN                                  ;RETORNA PARA A ROTINA PORT_C3
+                      00291 
+053C                  00292 TECLA_D
+                      00293 
+053C   1886           00294         BTFSC   PORTB,1                 ;TESTA SE O BIT 1 DO PORTB ESTA COM VALOR 0
+053D   0008           00295         RETURN                                  ;RETORNA PARA A ROTINA PORT_C3
+053E   2???           00296         CALL    FILTRO                  ;CHAMA A ROTINA FILTRO (DELAY)
+053F   1886           00297         BTFSC   PORTB,1                 ;TESTA SE O BIT 1 DO PORTB ESTA COM VALOR 0
+0540   0008           00298         RETURN                                  ;RETORNA PARA A ROTINA PORT_C3
+0541   2???           00299         CALL    FILTRO                  ;CHAMA A ROTINA FILTRO (DELAY)
+0542   1886           00300         BTFSC   PORTB,1                 ;TESTA SE O BIT 1 DO PORTB ESTA COM VALOR 0
+0543   0008           00301         RETURN                                  ;RETORNA PARA A ROTINA PORT_C3
+0544   1C86           00302         BTFSS   PORTB,1                 ;VERIFICA SE O BOTAO FOI SOLTO
+0545   2???           00303         GOTO    $-1                             ;EXECUTA A LINHA ANTERIOR NOVAMENTE
+                      00304 
+0546   1AA2           00305         BTFSC   ESTADO_MOTOR    ;TRAVA DE MOTOR LIGADO
+0547   0008           00306         RETURN                                  ;RETORNA
+                      00307 
+0548   1C22           00308         BTFSS   ESTADO_BOTAO    ;TRAVA DE NAO ATENDIMENTO
+0549   0008           00309         RETURN                                  ;RETORNA
+                      00310 
+054A   30FF           00311         MOVLW   B'11111111'             ;VELOCIDADE DESEJADA DE 100%
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 43
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+054B   009B           00312         MOVWF   CCPR2L                  ;MOVE W P/ O REGISTRADOR CCPR2L
+                      00313 
+054C   161D           00314         BSF             CCP2CON,4               ;SETA CCP2CON BIT 4 P/ VELOCIDADE DESEJADA DE 100%
+054D   169D           00315         BSF             CCP2CON,5               ;SETA CCP2CON BIT 5 P/ VELOCIDADE DESEJADA DE 100%      
+                      00316 
+054E   1606           00317         BSF             PORTB,4                 ;LIGA O MOTOR
+054F   1286           00318         BCF             PORTB,5                 ;LIGA O MOTOR
+                      00319 
+0550   2???           00320         CALL    INTERRUPT               ;CHAMA A INTERRUPCAO
+0551   2???           00321         CALL    MOSTRAR_V100    ;CHAMA O DISPLAY
+                      00322 
+0552   16A2           00323         BSF             ESTADO_MOTOR    ;SETA A VARIAVEL DE TRAVA DO MOTOR
+                      00324         
+0553   0008           00325         RETURN                                  ;RETORNA PARA A ROTINA PORT_C3
+                      00326 
+0554                  00327 TECLA_E
+                      00328 
+0554   1906           00329         BTFSC   PORTB,2                 ;TESTA SE O BIT 2 DO PORTB ESTA COM VALOR 0
+0555   0008           00330         RETURN                                  ;RETORNA PARA A ROTINA PORT_C3
+0556   2???           00331         CALL    FILTRO                  ;CHAMA A ROTINA FILTRO (DELAY)
+0557   1906           00332         BTFSC   PORTB,2                 ;TESTA SE O BIT 2 DO PORTB ESTA COM VALOR 0
+0558   0008           00333         RETURN                                  ;RETORNA PARA A ROTINA PORT_C3
+0559   2???           00334         CALL    FILTRO                  ;CHAMA A ROTINA FILTRO (DELAY)
+055A   1906           00335         BTFSC   PORTB,2                 ;TESTA SE O BIT 2 DO PORTB ESTA COM VALOR 0
+055B   0008           00336         RETURN                                  ;RETORNA PARA A ROTINA PORT_C3
+055C   1D06           00337         BTFSS   PORTB,2                 ;VERIFICA SE O BOTAO FOI SOLTO
+055D   2???           00338         GOTO    $-1                             ;EXECUTA A LINHA ANTERIOR NOVAMENTE
+                      00339 
+055E   1322           00340         BCF             FIM_MEDIA               ;LIMPA A FLAG DE CONTROLE DO CODIGO
+055F   13A2           00341         BCF             RESTO_0                 ;LIMPA A FLAG DE CONTROLE DAS CASAS DECIMAIS
+0560   2???           00342         CALL    CALCULO_MEDIA   ;CHAMA A ROTINA PARA CALCULO DA MEDIA
+0561   0851           00343         MOVF    MEDIA,W                 ;MOVE O VALOR DE MEDIA P/ W
+0562   00C7           00344         MOVWF   BATATA                  ;MOVE O VALOR DE W P/ A VARIAVEL DA ROTINA BATATA
+0563   2???           00345         CALL    DIGITOS                 ;CHAMA A ROTINA DIGITOS
+                      00346 
+0564   0852           00347         MOVF    MEDIA_RESTO,W   ;MOVE O VALOR DE MEDIA_RESTO P/ W
+0565   3A00           00348         XORLW   0x00                    ;FAZ UM "OU EXCLUSIVO" DE 0 COM O VALOR DE MEDIA_RESTO
+0566   1903           00349         BTFSC   STATUS,2                ;TESTA SE O STATUS Z FOI AFETADO, SE 1 O VALOR DE MEDIA_RESTO É 
+                            IGUAL 0
+0567   17A2           00350         BSF             RESTO_0                 ;SE MEDIA_RESTO IGUAL A 0, SETA A FLAG DE CONTROLE DA CA
+                            SA DECIMAL
+                      00351 
+0568   0848           00352         MOVF    DIGITO1,W               ;MOVE O VALOR DE DIGITO1 P/ W
+0569   3A00           00353         XORLW   0x00                    ;FAZ UM "OU EXCLUSIVO" DE 0 COM O VALOR DE DIGITO1
+056A   1D03           00354         BTFSS   STATUS,2                ;TESTA SE O STATUS Z FOI AFETADO, SE 1 O VALOR DE DIGITO1 É IGUA
+                            L A 0
+056B   2???           00355         CALL    MOSTRAR_MEDIA_3CASAS    ;CHAMA A ROTINA QUE MOSTRA A MEDIA COM TRÊS CASAS INTEIRAS
+                      00356         
+056C   1B22           00357         BTFSC   FIM_MEDIA               ;TESTA A FLAG FIM_MEDIA P/ SABER SE A ROTINA JÁ ESCREVEU ALGO NO
+                             LCD
+056D   0008           00358         RETURN                                  ;RETORNA
+                      00359         
+056E   0849           00360         MOVF    DIGITO2,W               ;MOVE O VALOR DE DIGITO2 P/ W
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 44
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+056F   3A00           00361         XORLW   0x00                    ;FAZ UM "OU EXCLUSIVO" DE 0 COM O VALOR DE DIGITO2
+0570   1D03           00362         BTFSS   STATUS,2                ;TESTA SE O STATUS Z FOI AFETADO, SE 1 O VALOR DE DIGITO2 É IGUA
+                            L A 0
+0571   2???           00363         CALL    MOSTRAR_MEDIA_2CASAS    ;CHAMA A ROTINA QUE MOSTRA A MEDIA COM DUAS CASAS INTEIRAS
+                      00364         
+0572   1B22           00365         BTFSC   FIM_MEDIA               ;TESTA A FLAG FIM_MEDIA P/ SABER SE A ROTINA JÁ ESCREVEU ALGO NO
+                             LCD
+0573   0008           00366         RETURN                                  ;RETORNA
+                      00367 
+0574   2???           00368         CALL    MOSTRAR_MEDIA_1CASA             ;CHAMA A ROTINA QUE MOSTRA A MEDIA COM UMA CASA INTEIRA
+                      00369 
+0575   0008           00370         RETURN                                  ;RETORNA PARA A ROTINA PORT_C3
+                      00371 
+0576                  00372 TECLA_F
+                      00373         
+0576   1986           00374         BTFSC   PORTB,3                 ;TESTA SE O BIT 3 DO PORTB ESTA COM VALOR 0
+0577   0008           00375         RETURN                                  ;RETORNA PARA A ROTINA PORT_C3
+0578   2???           00376         CALL    FILTRO                  ;CHAMA A ROTINA FILTRO (DELAY)
+0579   1986           00377         BTFSC   PORTB,3                 ;TESTA SE O BIT 3 DO PORTB ESTA COM VALOR 0
+057A   0008           00378         RETURN                                  ;RETORNA PARA A ROTINA PORT_C3
+057B   2???           00379         CALL    FILTRO                  ;CHAMA A ROTINA FILTRO (DELAY)
+057C   1986           00380         BTFSC   PORTB,3                 ;TESTA SE O BIT 3 DO PORTB ESTA COM VALOR 0
+057D   0008           00381         RETURN                                  ;RETORNA PARA A ROTINA PORT_C3
+057E   1D86           00382         BTFSS   PORTB,3                 ;VERIFICA SE O BOTAO FOI SOLTO
+057F   2???           00383         GOTO    $-1                             ;EXECUTA A LINHA ANTERIOR NOVAMENTE
+                      00384 
+0580   3000           00385         MOVLW   0x00                    ;VALOR 0
+0581   00C6           00386         MOVWF   CONTADOR                ;ZERA O CONTADOR
+0582   2???           00387         CALL    INICIALIZA_LCD  ;INDICADOR QUE ZEROU
+0583   1022           00388         BCF             ESTADO_BOTAO    ;LIMPA ESTADO_BOTAO, DESABILITANDO A TECLA_1
+0584   1622           00389         BSF             FLAG_10S                ;SETA A FLAG DE 10s
+0585   16A2           00390         BSF             ESTADO_MOTOR    ;SETA A FLAG DE ESTADO DO MOTOR
+                      00391 
+                      00392         
+0586   0008           00393         RETURN                                  ;RETORNA PARA A ROTINA PORT_C3
+                      00478 #INCLUDE<E2PROM.INC>
+0587                  00001 ESCR_E2PROM
+                      00002 
+0587   0846           00003         MOVF    CONTADOR,W
+                      00004 
+                      00005         BANK2                                   ;BANKSEL EEDATA
+0588   1703               M                                 bsf STATUS,RP1
+0589   1283               M                                 bcf     STATUS,RP0
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+058A   008C           00006         MOVWF   EEDATA
+                      00007         
+                      00008         BANK0
+058B   1303               M                                 bcf STATUS,RP1
+058C   1283               M                                 bcf     STATUS,RP0
+058D   084C           00009         MOVF    ENDERECO,W
+                      00010         
+                      00011         BANK2                                   ;BANKSEL EEADR
+058E   1703               M                                 bsf STATUS,RP1
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 45
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+058F   1283               M                                 bcf     STATUS,RP0
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0590   008D           00012         MOVWF   EEADR
+                      00013         
+                      00014         BANK3                                   ;BANKSEL EECON1
+0591   1703               M                                 bsf STATUS,RP1
+0592   1683               M                                 bsf     STATUS,RP0
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0593   138C           00015         BCF             EECON1,EEPGD
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0594   150C           00016         BSF             EECON1,WREN
+0595   3055           00017         MOVLW   0x55
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0596   008D           00018         MOVWF   EECON2                  ;OBRIGATÓRIO.
+0597   30AA           00019         MOVLW   0xAA
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0598   008D           00020         MOVWF   EECON2                  ;OBRIGATÓRIO.
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0599   148C           00021         BSF             EECON1,WR               ;INICIA ESCRITA.
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+059A   188C           00022         BTFSC   EECON1,WR
+059B   2???           00023         GOTO    $-1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+059C   110C           00024         BCF             EECON1,WREN
+                      00025         
+                      00026         BANK0
+059D   1303               M                                 bcf STATUS,RP1
+059E   1283               M                                 bcf     STATUS,RP0
+059F   0008           00027         RETURN                                  ;RETORNA
+                      00028 
+05A0                  00029 LEIT_E2PROM
+                      00030 
+05A0   084C           00031         MOVF    ENDERECO,W
+                      00032         
+                      00033         BANK2                                   ;BANKSEL EEADR
+05A1   1703               M                                 bsf STATUS,RP1
+05A2   1283               M                                 bcf     STATUS,RP0
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+05A3   008D           00034         MOVWF   EEADR
+                      00035         
+                      00036         BANK3                                   ;BANKSEL EECON1
+05A4   1703               M                                 bsf STATUS,RP1
+05A5   1683               M                                 bsf     STATUS,RP0
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+05A6   138C           00037         BCF     EECON1,EEPGD
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+05A7   140C           00038         BSF     EECON1,RD
+                      00039         
+                      00040         BANK2                                   ;BANKSEL EEDATA
+05A8   1703               M                                 bsf STATUS,RP1
+05A9   1283               M                                 bcf     STATUS,RP0
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+05AA   080C           00041         MOVF    EEDATA,W
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 46
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00042         
+                      00043         BANK0                                   ;BANKSEL DADO
+05AB   1303               M                                 bcf STATUS,RP1
+05AC   1283               M                                 bcf     STATUS,RP0
+05AD   00CB           00044         MOVWF   DADO
+                      00045 
+05AE   0008           00046         RETURN                                  ;RETORNA
+                      00479 
+                      00480 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00481 ;*                       FIM DO PROGRAMA                           *
+                      00482 ;* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                      00483 
+373A                  00484         END     ;OBRIGATÓRIO.
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 47
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+ACKDT                             00000005
+ACKEN                             00000004
+ACKSTAT                           00000006
+ADCON0                            0000001F
+ADCON1                            0000009F
+ADCS0                             00000006
+ADCS1                             00000007
+ADDEN                             00000003
+ADFM                              00000007
+ADIE                              00000006
+ADIF                              00000006
+ADON                              00000000
+ADRESH                            0000001E
+ADRESL                            0000009E
+BANK0                             
+BANK1                             
+BANK2                             
+BANK3                             
+BATATA                            00000047
+BCLIE                             00000003
+BCLIF                             00000003
+BF                                00000000
+BRGH                              00000002
+C                                 00000000
+CAIXA                             00000045
+CAIXA_FIM                         00000176
+CAIXA_LIVRE                       00000123
+CALCULO_MEDIA                     0000007A
+CCP1CON                           00000017
+CCP1IE                            00000002
+CCP1IF                            00000002
+CCP1M0                            00000000
+CCP1M1                            00000001
+CCP1M2                            00000002
+CCP1M3                            00000003
+CCP1X                             00000005
+CCP1Y                             00000004
+CCP2CON                           0000001D
+CCP2IE                            00000000
+CCP2IF                            00000000
+CCP2M0                            00000000
+CCP2M1                            00000001
+CCP2M2                            00000002
+CCP2M3                            00000003
+CCP2X                             00000005
+CCP2Y                             00000004
+CCPR1                             00000015
+CCPR1H                            00000016
+CCPR1L                            00000015
+CCPR2                             0000001B
+CCPR2H                            0000001C
+CCPR2L                            0000001B
+CHS0                              00000003
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 48
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+CHS1                              00000004
+CHS2                              00000005
+CKE                               00000006
+CKP                               00000004
+CONTADOR                          00000046
+CREN                              00000004
+CSRC                              00000007
+D                                 00000005
+DADO                              0000004B
+DATA_ADDRESS                      00000005
+DC                                00000001
+DESLIGA_MOTOR                     00000074
+DIFERENCA_H                       00000041
+DIFERENCA_L                       00000042
+DIGEND1                           0000004D
+DIGEND2                           0000004E
+DIGITO1                           00000048
+DIGITO2                           00000049
+DIGITO3                           0000004A
+DIGITOS                           000003BB
+DIV                               0000042D
+DIV2                              0000044A
+DIVIDENDO                         0000003C
+DIVIDENDOTMP_H                    00000031
+DIVIDENDOTMP_L                    00000032
+DIVIDENDO_H                       0000002F
+DIVIDENDO_L                       00000030
+DIVIDE_16x16                      00000414
+DIVIDE_8x8                        00000447
+DIVISOR                           0000003E
+DIVISORTMP_H                      00000037
+DIVISORTMP_L                      00000038
+DIVISOR_H                         00000035
+DIVISOR_L                         00000036
+D_A                               00000005
+D_NOT_A                           00000005
+EEADR                             0000010D
+EEADRH                            0000010F
+EECON1                            0000018C
+EECON2                            0000018D
+EEDATA                            0000010C
+EEDATH                            0000010E
+EEIE                              00000004
+EEIF                              00000004
+EEPGD                             00000007
+EMPRESTA                          00000443
+EMPRESTA2                         0000045F
+ENDERECO                          0000004C
+ESCREVE_DISPLAY                   000003D0
+ESCR_E2PROM                       00000587
+ESTADO_BOTAO                      FLAGS,0
+ESTADO_DISPLAY                    FLAGS,1
+ESTADO_E2PROM                     FLAGS,2
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 49
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+ESTADO_MOTOR                      FLAGS,5
+F                                 00000001
+FERR                              00000002
+FILTER                            00000023
+FILTER2                           00000024
+FILTRO                            00000013
+FILTRO2                           00000015
+FIM_ESCRITA                       0000029A
+FIM_INT                           00000078
+FIM_MEDIA                         FLAGS,6
+FLAGS                             00000022
+FLAG_10S                          FLAGS,4
+FLAG_1S                           FLAGS,3
+FSR                               00000004
+GCEN                              00000007
+GERA_PULSO                        000003D4
+GIE                               00000007
+GO                                00000002
+GO_DONE                           00000002
+GO_NOT_DONE                       00000002
+I2C_DATA                          00000005
+I2C_READ                          00000002
+I2C_START                         00000003
+I2C_STOP                          00000004
+IBF                               00000007
+IBOV                              00000005
+INDF                              00000000
+INICIALIZA_LCD                    000000AE
+INICIO                            0000001C
+INTCON                            0000000B
+INTE                              00000004
+INTEDG                            00000006
+INTERRUPT                         00000063
+INTF                              00000001
+IRP                               00000007
+LEIT_E2PROM                       000005A0
+LIGA_MOTOR                        0000006C
+LIMPA_RAM                         0000003B
+MAIN                              00000052
+MEDIA                             00000051
+MEDIA_RESTO                       00000052
+MINUENDO_H                        0000003F
+MINUENDO_L                        00000040
+MOSTRAR_CONTADOR                  000001BD
+MOSTRAR_ENDERECO                  00000220
+MOSTRAR_MEDIA_1CASA               0000038D
+MOSTRAR_MEDIA_2CASAS              00000359
+MOSTRAR_MEDIA_3CASAS              0000031F
+MOSTRAR_V100                      000002E8
+MOSTRAR_V33                       000002B5
+MULTIPLICA                        000003F4
+MULTIPLICAX                       0000040B
+MULTIPLICA_10x8                   000003FB
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 50
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+MULTIPLICA_4x4                    000003D9
+MULTIPLICA_8x8                    000003EA
+MULT_1                            00000026
+MULT_1_H                          00000027
+MULT_1_L                          00000028
+MULT_2                            00000029
+MULT_TMP                          00000025
+NOT_A                             00000005
+NOT_ADDRESS                       00000005
+NOT_BO                            00000000
+NOT_BOR                           00000000
+NOT_DONE                          00000002
+NOT_PD                            00000003
+NOT_POR                           00000001
+NOT_RBPU                          00000007
+NOT_RC8                           00000006
+NOT_T1SYNC                        00000002
+NOT_TO                            00000004
+NOT_TX8                           00000006
+NOT_W                             00000002
+NOT_WRITE                         00000002
+OBF                               00000006
+OERR                              00000001
+OPTION_REG                        00000081
+P                                 00000004
+PASSOU_10S                        0000005D
+PASSOU_1S                         00000059
+PCFG0                             00000000
+PCFG1                             00000001
+PCFG2                             00000002
+PCFG3                             00000003
+PCL                               00000002
+PCLATH                            0000000A
+PCON                              0000008E
+PEIE                              00000006
+PEN                               00000002
+PIE1                              0000008C
+PIE2                              0000008D
+PIR1                              0000000C
+PIR2                              0000000D
+PORTA                             00000005
+PORTB                             00000006
+PORTC                             00000007
+PORTD                             00000008
+PORTE                             00000009
+PORT_C0                           0000046D
+PORT_C2                           00000476
+PORT_C3                           0000047F
+POSICIONA_DISPLAY                 000003CC
+PR2                               00000092
+PRODUTO                           0000002A
+PRODUTO_H                         0000002B
+PRODUTO_L                         0000002C
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 51
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+PSPIE                             00000007
+PSPIF                             00000007
+PSPMODE                           00000004
+QUOCIENTE                         0000003B
+QUOCIENTE_H                       0000002D
+QUOCIENTE_L                       0000002E
+R                                 00000002
+RA0                               00000000
+RA1                               00000001
+RA2                               00000002
+RA3                               00000003
+RA4                               00000004
+RA5                               00000005
+RB0                               00000000
+RB1                               00000001
+RB2                               00000002
+RB3                               00000003
+RB4                               00000004
+RB5                               00000005
+RB6                               00000006
+RB7                               00000007
+RBIE                              00000003
+RBIF                              00000000
+RC0                               00000000
+RC1                               00000001
+RC2                               00000002
+RC3                               00000003
+RC4                               00000004
+RC5                               00000005
+RC6                               00000006
+RC7                               00000007
+RC8_9                             00000006
+RC9                               00000006
+RCD8                              00000000
+RCEN                              00000003
+RCIE                              00000005
+RCIF                              00000005
+RCREG                             0000001A
+RCSTA                             00000018
+RD                                00000000
+RD0                               00000000
+RD1                               00000001
+RD2                               00000002
+RD3                               00000003
+RD4                               00000004
+RD5                               00000005
+RD6                               00000006
+RD7                               00000007
+RE0                               00000000
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 52
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+RE1                               00000001
+RE2                               00000002
+READ_WRITE                        00000002
+RESTO                             0000003D
+RESTOTMP_H                        00000033
+RESTOTMP_L                        00000034
+RESTO_0                           FLAGS,7
+RESTO_H                           00000039
+RESTO_L                           0000003A
+RP0                               00000005
+RP1                               00000006
+RSEN                              00000001
+RX9                               00000006
+RX9D                              00000000
+R_NOT_W                           00000002
+R_W                               00000002
+S                                 00000003
+SAI_INT                           0000000E
+SEN                               00000000
+SMP                               00000007
+SPBRG                             00000099
+SPEN                              00000007
+SREN                              00000005
+SSPADD                            00000093
+SSPBUF                            00000013
+SSPCON                            00000014
+SSPCON2                           00000091
+SSPEN                             00000005
+SSPIE                             00000003
+SSPIF                             00000003
+SSPM0                             00000000
+SSPM1                             00000001
+SSPM2                             00000002
+SSPM3                             00000003
+SSPOV                             00000006
+SSPSTAT                           00000094
+STATUS                            00000003
+STATUS_TEMP                       00000021
+SUBTRAENDO_H                      00000043
+SUBTRAENDO_L                      00000044
+SUBTRAI_16x16                     00000439
+SUBTRAI_16x162                    00000451
+SYNC                              00000004
+T0CS                              00000005
+T0IE                              00000005
+T0IF                              00000002
+T0SE                              00000004
+T1                                0000015E
+T1CKPS0                           00000004
+T1CKPS1                           00000005
+T1CON                             00000010
+T1INSYNC                          00000002
+T1OSCEN                           00000003
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 53
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+T1SYNC                            00000002
+T2                                000000AF
+T2CKPS0                           00000000
+T2CKPS1                           00000001
+T2CON                             00000012
+TECLADO                           00000463
+TECLA_0                           00000488
+TECLA_1                           000004A9
+TECLA_2                           000004BD
+TECLA_3                           000004D0
+TECLA_8                           000004E0
+TECLA_9                           000004EF
+TECLA_A                           000004FE
+TECLA_B                           0000050D
+TECLA_C                           00000524
+TECLA_D                           0000053C
+TECLA_E                           00000554
+TECLA_F                           00000576
+TESTA_MULT_1                      000003FF
+TESTA_MULT_2                      00000407
+TESTE_ZERO                        000003EC
+TIME_10S                          00000050
+TIME_1S                           0000004F
+TMR0                              00000001
+TMR0IE                            00000005
+TMR0IF                            00000002
+TMR1                              0000000E
+TMR1CS                            00000001
+TMR1H                             0000000F
+TMR1IE                            00000000
+TMR1IF                            00000000
+TMR1L                             0000000E
+TMR1ON                            00000000
+TMR2                              00000011
+TMR2IE                            00000001
+TMR2IF                            00000001
+TMR2ON                            00000002
+TOUTPS0                           00000003
+TOUTPS1                           00000004
+TOUTPS2                           00000005
+TOUTPS3                           00000006
+TRISA                             00000085
+TRISA0                            00000000
+TRISA1                            00000001
+TRISA2                            00000002
+TRISA3                            00000003
+TRISA4                            00000004
+TRISA5                            00000005
+TRISB                             00000086
+TRISB0                            00000000
+TRISB1                            00000001
+TRISB2                            00000002
+TRISB3                            00000003
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 54
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+TRISB4                            00000004
+TRISB5                            00000005
+TRISB6                            00000006
+TRISB7                            00000007
+TRISC                             00000087
+TRISC0                            00000000
+TRISC1                            00000001
+TRISC2                            00000002
+TRISC3                            00000003
+TRISC4                            00000004
+TRISC5                            00000005
+TRISC6                            00000006
+TRISC7                            00000007
+TRISD                             00000088
+TRISD0                            00000000
+TRISD1                            00000001
+TRISD2                            00000002
+TRISD3                            00000003
+TRISD4                            00000004
+TRISD5                            00000005
+TRISD6                            00000006
+TRISD7                            00000007
+TRISE                             00000089
+TRISE0                            00000000
+TRISE1                            00000001
+TRISE2                            00000002
+TRMT                              00000001
+TX8_9                             00000006
+TX9                               00000006
+TX9D                              00000000
+TXD8                              00000000
+TXEN                              00000005
+TXIE                              00000004
+TXIF                              00000004
+TXREG                             00000019
+TXSTA                             00000098
+T_DIVIDENDO                       0000041A
+UA                                00000001
+W                                 00000000
+WCOL                              00000007
+WR                                00000001
+WREN                              00000002
+WRERR                             00000003
+W_TEMP                            00000020
+Z                                 00000002
+_.org_1_0018                      00000018
+_.org_1_0491                      00000491
+_.org_1_04B2                      000004B2
+_.org_1_04C6                      000004C6
+_.org_1_04D9                      000004D9
+_.org_1_04E9                      000004E9
+_.org_1_04F8                      000004F8
+_.org_1_0507                      00000507
+MPASM  5.51   PROJETO_GERENCIADORDECAIXAS.ASM   6-26-2018  21:24:44         PAGE 55
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+_.org_1_0516                      00000516
+_.org_1_052D                      0000052D
+_.org_1_0545                      00000545
+_.org_1_055D                      0000055D
+_.org_1_057F                      0000057F
+_.org_1_059B                      0000059B
+_BODEN_OFF                        00003FBF
+_BODEN_ON                         00003FFF
+_BOREN_OFF                        00003FBF
+_BOREN_ON                         00003FFF
+_CONFIG                           00002007
+_CPD_OFF                          00003FFF
+_CPD_ON                           00003EFF
+_CP_ALL                           00000FCF
+_CP_HALF                          00001FDF
+_CP_OFF                           00003FFF
+_CP_UPPER_256                     00002FEF
+_DEBUG_OFF                        00003FFF
+_DEBUG_ON                         000037FF
+_DEVID1                           00002006
+_FOSC_EXTRC                       00003FFF
+_FOSC_HS                          00003FFE
+_FOSC_LP                          00003FFC
+_FOSC_XT                          00003FFD
+_HS_OSC                           00003FFE
+_IDLOC0                           00002000
+_IDLOC1                           00002001
+_IDLOC2                           00002002
+_IDLOC3                           00002003
+_LP_OSC                           00003FFC
+_LVP_OFF                          00003F7F
+_LVP_ON                           00003FFF
+_PWRTE_OFF                        00003FFF
+_PWRTE_ON                         00003FF7
+_RC_OSC                           00003FFF
+_WDTE_OFF                         00003FFB
+_WDTE_ON                          00003FFF
+_WDT_OFF                          00003FFB
+_WDT_ON                           00003FFF
+_WRT_ENABLE_OFF                   00003DFF
+_WRT_ENABLE_ON                    00003FFF
+_WRT_OFF                          00003DFF
+_WRT_ON                           00003FFF
+_XT_OSC                           00003FFD
+__16F877                          00000001
+__DEBUG                           1
+__MPLAB_DEBUGGER_ICD2             1
+
+Errors   :     0
+Warnings :    41 reported,     0 suppressed
+Messages :    39 reported,     0 suppressed
+
+
