@@ -1,6 +1,6 @@
 # PIC-16F877
 
-Trabalho desenvolvido utilizando o kit didático datapool-PIC 2377.
+Trabalho desenvolvido utilizando o kit didático datapool-PIC 2377 em assembly.
 
 ## 1. Objetivos
 * Aprender a utilizar diversos periféricos em uma aplicação prática.
